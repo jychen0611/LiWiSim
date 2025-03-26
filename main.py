@@ -1,3 +1,6 @@
+import math
+from formula import Formula
+
 # Room size
 L = 10 # m
 W = 10 # m
@@ -39,3 +42,9 @@ N_wifi = 1
 N_ue = 25
 # Default field of view angle of PD
 FoV = 60 # degree
+
+
+
+if __name__ == "__main__":
+    print("Simulation Start!")
+
