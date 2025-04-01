@@ -1,6 +1,7 @@
 import unittest
 import math
 from formula import Formula
+from location import Location
 
 class Test_VLC_Channel_Gain(unittest.TestCase):
     def test_normal_case(self):
@@ -48,7 +49,36 @@ class Test_WiFi_Data_Rate(unittest.TestCase):
     def test_normal_case(self):
         result = Formula.wifi_data_rate(B_wifi=20e6, sinr=12559432157.547861)
         self.assertAlmostEqual(result, 670961043.7388686, places=7)
-  
+
+# Room size
+L = 10 # m
+W = 10 # m
+H = 3 # m  
+class TestLocationFunctions(unittest.TestCase):
+    def test_generate_ue_location_within_bounds(self):
+        for _ in range(100):
+            x, y, z = Location.generate_ue_location()
+            self.assertGreaterEqual(x, 0)
+            self.assertLessEqual(x, L)
+            self.assertGreaterEqual(y, 0)
+            self.assertLessEqual(y, W)
+            self.assertEqual(z, 0)
+
+    def test_generate_vlc_location_count_and_values(self):
+        vlc_locs = Location.generate_vlc_location()
+        self.assertEqual(len(vlc_locs), 16)
+        for x, y, z in vlc_locs:
+            self.assertIn(x, [2, 4, 6, 8])
+            self.assertIn(y, [2, 4, 6, 8])
+            self.assertEqual(z, H)
+
+    def test_geometric_distance_known_values(self):
+        self.assertAlmostEqual(Location.geometric_distance((0, 0, 0), (3, 4, 0)), 5.0)
+        self.assertAlmostEqual(Location.geometric_distance((0, 0, 0), (0, 0, 5)), 5.0)
+        self.assertAlmostEqual(Location.geometric_distance((1, 2, 3), (4, 6, 3)), 5.0)
+        self.assertAlmostEqual(Location.geometric_distance((0, 0, 0), (0, 0, 0)), 0.0)
+
+
 
 if __name__ == "__main__":
     unittest.main()

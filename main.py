@@ -1,5 +1,5 @@
-import math
 from formula import Formula
+from location import Location
 
 # Room size
 L = 10 # m
@@ -44,7 +44,13 @@ N_ue = 25
 FoV = 60 # degree
 
 
-
 if __name__ == "__main__":
     print("Simulation Start!")
+    ue_locations = [Location.generate_ue_location() for _ in range(N_ue)]
+    vlc_locations = Location.generate_vlc_location()
+    wifi_location = (5, 5, 0)
+    print(ue_locations[0])
+    print(vlc_locations[4])
+    print(wifi_location)
+    print(Location.geometric_distance(ue_locations[0], vlc_locations[4]), Location.geometric_distance(ue_locations[0], wifi_location)) 
 
