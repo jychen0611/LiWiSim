@@ -23,11 +23,114 @@ class Test_VLC_Channel_Gain(unittest.TestCase):
         result = Formula.vlc_channel_gain(m=1, A_pd=0, d=1, irradiant_angle=30, incident_angle=20, Fov=60, optical_filter_gain=1, optical_concentrator=1)
         self.assertEqual(result, 0)
 
+class TestOpticalConcentrator(unittest.TestCase):
+
+    def test_within_fov(self):
+        """Test output when incident angle is less than FOV"""
+        result = Formula.optical_concentrator(20, 60)
+        expected = (1.5**2) / (math.sin(math.radians(60))**2)
+        self.assertAlmostEqual(result, expected, places=6)
+
+    def test_equal_to_fov(self):
+        """Test output when incident angle equals FOV"""
+        result = Formula.optical_concentrator(60, 60)
+        expected = (1.5**2) / (math.sin(math.radians(60))**2)
+        self.assertAlmostEqual(result, expected, places=6)
+
+    def test_exceeding_fov(self):
+        """Test output when incident angle is greater than FOV"""
+        result = Formula.optical_concentrator(70, 60)
+        self.assertEqual(result, 0)
+
+    def test_output_type(self):
+        """Ensure the output is a float when angle is within FOV"""
+        result = Formula.optical_concentrator(30, 60)
+        self.assertIsInstance(result, float)
+
+    def test_zero_fov(self):
+        """Test behavior when FOV is zero"""
+        with self.assertRaises(ZeroDivisionError):
+            Formula.optical_concentrator(0, 0)
+
 class Test_VLC_SINR(unittest.TestCase):
     def test_normal_case(self):
         result = Formula.vlc_sinr(oe_conversion=0.44, P_vlc=20, H_vlc=8e-6, shot=0.1, thermal=0.2, interference=1)
         self.assertAlmostEqual(result, 4.72015238e-9, places=7)
    
+class TestShotNoise(unittest.TestCase):
+
+    def test_known_values(self):
+        """Test output with known input values"""
+        result = Formula.shot_noise(1e-3, 2e-3)
+        # Calculate expected value manually
+        q = 1.6e-19
+        Re = 0.54
+        B = 10e6
+        I_bg = 5.1e-3
+        I_2 = 0.562
+        expected = 2*q*Re*(1e-3 + 2e-3)*B + 2*q*I_bg*I_2*B
+        self.assertAlmostEqual(result, expected, places=30)
+
+    def test_zero_input(self):
+        """Test output when both signal and ICI powers are zero"""
+        result = Formula.shot_noise(0, 0)
+        q = 1.6e-19
+        B = 10e6
+        I_bg = 5.1e-3
+        I_2 = 0.562
+        expected = 2*q*I_bg*I_2*B
+        self.assertAlmostEqual(result, expected, places=30)
+
+    def test_output_type(self):
+        """Ensure output is a float"""
+        result = Formula.shot_noise(0.001, 0.002)
+        self.assertIsInstance(result, float)
+
+    def test_large_input(self):
+        """Test behavior with large input values"""
+        result = Formula.shot_noise(1, 1)
+        self.assertGreater(result, 0)
+
+    def test_small_input(self):
+        """Test behavior with very small input values"""
+        result = Formula.shot_noise(1e-12, 1e-12)
+        self.assertGreater(result, 0)
+
+class TestThermalNoise(unittest.TestCase):
+
+    def test_output_type(self):
+        """Ensure the output is a float"""
+        result = Formula.thermal_noise()
+        self.assertIsInstance(result, float)
+
+    def test_output_positive(self):
+        """Thermal noise power should be a positive value"""
+        result = Formula.thermal_noise()
+        self.assertGreater(result, 0)
+
+    def test_repeatability(self):
+        """Ensure the function returns the same value each time"""
+        val1 = Formula.thermal_noise()
+        val2 = Formula.thermal_noise()
+        self.assertAlmostEqual(val1, val2, places=30)
+
+    def test_manual_expected_value(self):
+        """Manually compute expected thermal noise value and compare"""
+        k = 1.28e-23
+        Tk = 300
+        fix_cap = 112
+        fet_factor = 1.5
+        B = 10e6
+        A = 1
+        I_2 = 0.562
+        I_3 = 0.0868
+        G = 10
+        gm = 3e-3
+
+        expected = ((8 * math.pi * k * Tk) / G) * fix_cap * A * I_2 * (B ** 2) + \
+                   ((16 * (math.pi ** 2) * k * Tk * fet_factor) / gm) * (fix_cap ** 2) * (A ** 2) * I_3 * (B ** 3)
+        actual = Formula.thermal_noise()
+        self.assertAlmostEqual(actual, expected, places=30)
 
 class Test_VLC_Data_Rate(unittest.TestCase):
     def test_normal_case(self):

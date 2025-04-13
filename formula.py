@@ -14,9 +14,37 @@ class Formula():
         incident_angle_rad = math.radians(incident_angle)
         return ((m+1)*A_pd*(math.cos(irradiant_angle_rad) ** m)*math.cos(incident_angle_rad)*optical_concentrator*optical_filter_gain)/(2*math.pi*(d ** 2))
     
+    def optical_concentrator(incident_angle, Fov):
+        if incident_angle > Fov :
+            return 0
+        n = 1.5
+        Fov_rad = math.radians(Fov)
+        return (n**2)/(math.sin(Fov_rad)**2)
+
     def vlc_sinr(oe_conversion, P_vlc, H_vlc, shot, thermal, interference):
         return ((oe_conversion*P_vlc*H_vlc)**2)/((shot**2)+(thermal**2)+interference)
     
+    def shot_noise(P_sig, P_ici):
+        q = 1.6 * (10**-19)
+        Re = 0.54
+        B = 10 * (10**6)
+        I_bg = 5.1 * (10**-3)
+        I_2 = 0.562
+        return 2*q*Re*(P_sig+P_ici)*B + 2*q*I_bg*I_2*B
+
+    def thermal_noise():
+        k = 1.28 * (10**-23)
+        Tk = 300 # room temperature 27 degree Celsius 
+        fix_capacitance_pd = 112
+        fet_factor = 1.5
+        B = 10 * (10**6)
+        A = 1
+        I_2 = 0.562
+        I_3 = 0.0868
+        G = 10
+        gm = 3 * (10**-3)        
+        return ((8*math.pi*k*Tk)/G)*fix_capacitance_pd*A*I_2*(B**2) + ((16*(math.pi**2)*k*Tk*fet_factor)/gm)*(fix_capacitance_pd**2)*(A**2)*I_3*(B**3)
+
     def vlc_data_rate(B_vlc, sinr):
         return B_vlc * math.log2(1+sinr)
     
