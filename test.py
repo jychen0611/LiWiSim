@@ -1,5 +1,6 @@
 import unittest
 import math
+import numpy as np
 from formula import Formula
 from location import Location
 
@@ -38,6 +39,28 @@ class Test_WiFi_Channel_Gain(unittest.TestCase):
     def test_normal_case(self):
         result = Formula.wifi_channel_gain(h_r=1, L_d=20)
         self.assertAlmostEqual(result, 0.1, places=1)
+
+class TestLargeScaleFadingLoss(unittest.TestCase):
+    def test_output_type(self):
+        """Test if the output is a float"""
+        np.random.seed(0)
+        result = Formula.large_scale_fading_loss(10)
+        self.assertIsInstance(result, float)
+
+    def test_reasonable_output_range(self):
+        """Check if the output is within a reasonable range for d=10"""
+        np.random.seed(0)
+        result = Formula.large_scale_fading_loss(10)
+        expected_path_loss = 68 + 10 * 1.6 * math.log10(10 / 1)  # without shadowing
+        self.assertTrue(expected_path_loss - 10 <= result <= expected_path_loss + 10)
+
+    def test_repeatability_with_seed(self):
+        """Ensure reproducibility when seed is fixed"""
+        np.random.seed(42)
+        val1 = Formula.large_scale_fading_loss(100)
+        np.random.seed(42)
+        val2 = Formula.large_scale_fading_loss(100)
+        self.assertAlmostEqual(val1, val2, places=6)
 
 class Test_WiFi_SINR(unittest.TestCase):
     def test_normal_case(self):

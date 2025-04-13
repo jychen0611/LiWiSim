@@ -1,4 +1,5 @@
 import math
+import numpy as np
 def dbm_to_watts(P_dbm):
         """Convert power from dBm to Watts"""
         return 10**((P_dbm - 30) / 10)  # Since 1 mW = 10^(-3) W
@@ -21,6 +22,14 @@ class Formula():
     
     def wifi_channel_gain(h_r, L_d):
         return (10 ** (-L_d/20)) * h_r
+    
+    def large_scale_fading_loss(d):
+        # Set parameters
+        mean = 0       # Zero-mean
+        std_dev = 1.8  # Standard deviation in dB
+        # Generate one sample of Z
+        Z = np.random.normal(loc=mean, scale=std_dev)
+        return 68 + 10*1.6*math.log10(d/1) + Z  
     
     def wifi_sinr(P_wifi, H_wifi, N_wifi, B_wifi):
         return (dbm_to_watts(P_wifi)*(H_wifi ** 2))/(dbm_to_watts(N_wifi)*B_wifi)
