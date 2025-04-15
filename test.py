@@ -213,9 +213,9 @@ class TestLargeScaleFadingLoss(unittest.TestCase):
         val2 = Formula.large_scale_fading_loss(100)
         self.assertAlmostEqual(val1, val2, places=6)
 
-class Test_WiFi_SINR(unittest.TestCase):
+class Test_WiFi_SNR(unittest.TestCase):
     def test_normal_case(self):
-        result = Formula.wifi_sinr(P_wifi=20, H_wifi=0.1, N_wifi=-174, B_wifi=20e6)
+        result = Formula.wifi_snr(P_wifi=20, H_wifi=0.1, N_wifi=-174, B_wifi=20e6)
         self.assertAlmostEqual(result, 12559432157.547861, places=6)
 
 

@@ -73,7 +73,7 @@ class Formula():
         Z = np.random.normal(loc=mean, scale=std_dev)
         return 68 + 10*1.6*math.log10(d/1) + Z  
     
-    def wifi_sinr(P_wifi, H_wifi, N_wifi, B_wifi):
+    def wifi_snr(P_wifi, H_wifi, N_wifi, B_wifi):
         return (dbm_to_watts(P_wifi)*(H_wifi ** 2))/(dbm_to_watts(N_wifi)*B_wifi)
     
     def wifi_data_rate(B_wifi, sinr):
