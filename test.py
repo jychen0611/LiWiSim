@@ -144,7 +144,7 @@ class TestThermalNoise(unittest.TestCase):
         """Manually compute expected thermal noise value and compare"""
         k = 1.28e-23
         Tk = 300
-        fix_cap = 112
+        fix_cap = 112e-12
         fet_factor = 1.5
         B = 10e6
         A = 1
@@ -168,6 +168,28 @@ class Test_WiFi_Channel_Gain(unittest.TestCase):
     def test_normal_case(self):
         result = Formula.wifi_channel_gain(h_r=1, L_d=20)
         self.assertAlmostEqual(result, 0.1, places=1)
+
+class TestGenerateRayleighHr(unittest.TestCase):
+
+    def test_non_negative_output(self):
+        for _ in range(1000):
+            hr = Formula.generate_rayleigh_hr()
+            self.assertGreaterEqual(hr, 0.0)
+
+    def test_average_power_close_to_expected(self):
+        avg_power_dB = 2.46
+        expected_power = 10 ** (avg_power_dB / 10)
+        samples = [Formula.generate_rayleigh_hr(avg_power_dB) for _ in range(100000)]
+        empirical_power = np.mean(np.square(samples))
+        # Allow a small tolerance (e.g., 5% relative error)
+        self.assertAlmostEqual(empirical_power, expected_power, delta=0.05 * expected_power)
+
+    def test_multiple_power_levels(self):
+        for db in [0, 5, 10]:
+            expected_power = 10 ** (db / 10)
+            samples = [Formula.generate_rayleigh_hr(db) for _ in range(50000)]
+            empirical_power = np.mean(np.square(samples))
+            self.assertAlmostEqual(empirical_power, expected_power, delta=0.05 * expected_power)
 
 class TestLargeScaleFadingLoss(unittest.TestCase):
     def test_output_type(self):
