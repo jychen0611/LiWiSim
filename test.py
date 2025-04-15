@@ -26,9 +26,9 @@ class Test_VLC_Channel_Gain(unittest.TestCase):
 
 class TestLambertianEmissionOrder(unittest.TestCase):
 
-    #def test_zero_degree(self):
-    #    result = Formula.lambertian_emission_order(0)
-    #    self.assertAlmostEqual(result, 0.0, places=6)
+    def test_zero_degree(self):
+        result = Formula.lambertian_emission_order(0)
+        self.assertAlmostEqual(result, 0.0, places=6)
 
     def test_known_value_60_degree(self):
         # At 60°, cos(60°) = 0.5, so log(0.5) = -ln(2), so the result should be 1
