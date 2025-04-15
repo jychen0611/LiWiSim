@@ -23,6 +23,32 @@ class Test_VLC_Channel_Gain(unittest.TestCase):
         result = Formula.vlc_channel_gain(m=1, A_pd=0, d=1, irradiant_angle=30, incident_angle=20, Fov=60, optical_filter_gain=1, optical_concentrator=1)
         self.assertEqual(result, 0)
 
+
+class TestLambertianEmissionOrder(unittest.TestCase):
+
+    #def test_zero_degree(self):
+    #    result = Formula.lambertian_emission_order(0)
+    #    self.assertAlmostEqual(result, 0.0, places=6)
+
+    def test_known_value_60_degree(self):
+        # At 60°, cos(60°) = 0.5, so log(0.5) = -ln(2), so the result should be 1
+        result = Formula.lambertian_emission_order(60)
+        self.assertAlmostEqual(result, 1.0, places=6)
+
+    def test_known_value_45_degree(self):
+        # Approximate expected result for 45°
+        expected = -math.log(2) / math.log(math.cos(math.radians(45)))
+        result = Formula.lambertian_emission_order(45)
+        self.assertAlmostEqual(result, expected, places=6)
+
+    def test_invalid_value_over_90(self):
+        with self.assertRaises(ValueError):
+            Formula.lambertian_emission_order(91)
+
+    def test_negative_angle(self):
+        with self.assertRaises(ValueError):
+            Formula.lambertian_emission_order(-10)
+
 class TestOpticalConcentrator(unittest.TestCase):
 
     def test_within_fov(self):

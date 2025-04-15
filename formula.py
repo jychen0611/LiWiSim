@@ -14,6 +14,12 @@ class Formula():
         incident_angle_rad = math.radians(incident_angle)
         return ((m+1)*A_pd*(math.cos(irradiant_angle_rad) ** m)*math.cos(incident_angle_rad)*optical_concentrator*optical_filter_gain)/(2*math.pi*(d ** 2))
     
+    def lambertian_emission_order(semi_angle_at_helf_power):
+        if semi_angle_at_helf_power <= 0 or semi_angle_at_helf_power >= 90:
+            raise ValueError("Semi-angle must be in the range (0, 90) degrees.")
+        semi_angle_at_helf_power_rad = math.radians(semi_angle_at_helf_power)
+        return -math.log(2)/math.log(math.cos(semi_angle_at_helf_power_rad))
+
     def optical_concentrator(incident_angle, Fov):
         if incident_angle > Fov :
             return 0
