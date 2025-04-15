@@ -221,7 +221,7 @@ class Test_WiFi_SNR(unittest.TestCase):
 
 class Test_WiFi_Data_Rate(unittest.TestCase):
     def test_normal_case(self):
-        result = Formula.wifi_data_rate(B_wifi=20e6, sinr=12559432157.547861)
+        result = Formula.wifi_data_rate(B_wifi=20e6, snr=12559432157.547861)
         self.assertAlmostEqual(result, 670961043.7388686, places=7)
 
 # Room size

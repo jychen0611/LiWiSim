@@ -76,6 +76,6 @@ class Formula():
     def wifi_snr(P_wifi, H_wifi, N_wifi, B_wifi):
         return (dbm_to_watts(P_wifi)*(H_wifi ** 2))/(dbm_to_watts(N_wifi)*B_wifi)
     
-    def wifi_data_rate(B_wifi, sinr):
-        return B_wifi * math.log2(1+sinr)
+    def wifi_data_rate(B_wifi, snr):
+        return B_wifi * math.log2(1+snr)
     
