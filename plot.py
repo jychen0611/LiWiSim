@@ -1,7 +1,73 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 
 class Plot():
+    def plot_network_distribution(ue_locations, vlc_locations, wifi_location, fov_deg=60, ceiling_height=3.0):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Unpack coordinates
+        ue_x, ue_y, ue_z = zip(*ue_locations)
+        vlc_x, vlc_y, vlc_z = zip(*vlc_locations)
+        wifi_x, wifi_y, wifi_z = wifi_location
+
+        # Plot UE locations
+        ax.scatter(ue_x, ue_y, ue_z, c='black', label='UE', marker='o')
+
+        # Plot VLC AP locations
+        ax.scatter(vlc_x, vlc_y, vlc_z, c='orange', label='VLC AP', marker='^')
+
+        # Plot WiFi AP location
+        ax.scatter([wifi_x], [wifi_y], [wifi_z], c='red', label='WiFi AP', marker='s')
+
+        # Draw VLC FOV ground circles
+        fov_rad = np.radians(fov_deg)
+        radius = ceiling_height * np.tan(fov_rad)
+
+        for (x, y, z) in vlc_locations:
+            if x == 6 and y == 6:
+                Plot.draw_vlc_fov_cone(ax, x, y, z, radius, ceiling_height)
+                #Plot.draw_vlc_ground_circle(ax, x, y, radius)
+
+        # Set room boundaries
+        ax.set_xlim(0, 10)
+        ax.set_ylim(0, 10)
+        ax.set_zlim(0, 3)
+
+        # Labeling
+        ax.set_xlabel('X (m)')
+        ax.set_ylabel('Y (m)')
+        ax.set_zlabel('Z (m)')
+        ax.set_title('WiFi / LiFi / UE Distribution Diagram with VLC Ground Coverage')
+        ax.legend()
+        plt.show()
+
+    # Ground circle drawer
+    def draw_vlc_ground_circle(ax, x0, y0, radius, resolution=100):
+        theta = np.linspace(0, 2 * np.pi, resolution)
+        circle_x = x0 + radius * np.cos(theta)
+        circle_y = y0 + radius * np.sin(theta)
+        circle_z = np.zeros_like(circle_x)  # On the ground (z = 0)
+
+        ax.plot(circle_x, circle_y, circle_z, color='orange', alpha=0.5, linestyle='-')
+
+    def draw_vlc_fov_cone(ax, x0, y0, z0, radius, height, resolution=30):
+        # Generate circle base of the cone
+        theta = np.linspace(0, 2 * np.pi, resolution)
+        circle_x = radius * np.cos(theta) + x0
+        circle_y = radius * np.sin(theta) + y0
+        circle_z = np.full_like(circle_x, z0 - height)
+
+        # Draw cone sides
+        for i in range(len(theta)):
+            ax.plot([x0, circle_x[i]], [y0, circle_y[i]], [z0, circle_z[i]], color='orange', alpha=0.2)
+
+        # Draw the circular base
+        ax.plot_trisurf(circle_x, circle_y, circle_z, color='orange', alpha=0.1)
+
+    '''
+
     def plot_network_distribution(ue_locations, vlc_locations, wifi_location):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
@@ -27,7 +93,7 @@ class Plot():
         ax.set_title('WiFi / LiFi / UE Distribution Diagram')
         ax.legend()
         plt.show()
-
+    '''
     def plot_vlc_channel_gain_matrix(channel_gain_matrix):
         """
         Plot the VLC channel gain matrix using only matplotlib.
