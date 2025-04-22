@@ -20,7 +20,7 @@ class Formula():
         semi_angle_at_helf_power_rad = math.radians(semi_angle_at_helf_power)
         return -math.log(2)/math.log(math.cos(semi_angle_at_helf_power_rad))
 
-    def optical_concentrator(incident_angle, Fov):
+    def optical_concentrator(incident_angle, Fov=60):
         if incident_angle > Fov :
             return 0
         n = 1.5
