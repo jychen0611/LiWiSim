@@ -51,7 +51,7 @@ class Formula():
         gm = 3e-3       
         return ((8*math.pi*k*Tk)/G)*fix_capacitance_pd*A*I_2*(B**2) + ((16*(math.pi**2)*k*Tk*fet_factor)/gm)*(fix_capacitance_pd**2)*(A**2)*I_3*(B**3)
 
-    def vlc_data_rate(B_vlc:20e6, sinr):
+    def vlc_data_rate(sinr, B_vlc=20e6):
         return B_vlc * math.log2(1+sinr)
     
     def wifi_channel_gain(h_r, L_d):
