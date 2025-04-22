@@ -6,7 +6,7 @@ def dbm_to_watts(P_dbm):
 
 class Formula():
 
-    def vlc_channel_gain(m, A_pd, d, irradiant_angle, incident_angle, Fov, optical_filter_gain, optical_concentrator):
+    def vlc_channel_gain(d, m=1.0000000000000002, A_pd=1, irradiant_angle=60, incident_angle=60, Fov=60, optical_filter_gain=1, optical_concentrator=3.0000000000000004):
         assert d != 0, "Distance (d) must not be zero to avoid division by zero."
         if incident_angle > Fov :
             return 0
@@ -27,7 +27,7 @@ class Formula():
         Fov_rad = math.radians(Fov)
         return (n**2)/(math.sin(Fov_rad)**2)
 
-    def vlc_sinr(oe_conversion, P_vlc, H_vlc, shot, thermal, interference):
+    def vlc_sinr(H_vlc, shot, interference, oe_conversion=0.44, P_vlc=6.66, thermal=3.9087079981627857e-16):
         return ((oe_conversion*P_vlc*H_vlc)**2)/((shot**2)+(thermal**2)+interference)
     
     def shot_noise(P_sig, P_ici):
@@ -51,7 +51,7 @@ class Formula():
         gm = 3e-3       
         return ((8*math.pi*k*Tk)/G)*fix_capacitance_pd*A*I_2*(B**2) + ((16*(math.pi**2)*k*Tk*fet_factor)/gm)*(fix_capacitance_pd**2)*(A**2)*I_3*(B**3)
 
-    def vlc_data_rate(B_vlc, sinr):
+    def vlc_data_rate(B_vlc:20e6, sinr):
         return B_vlc * math.log2(1+sinr)
     
     def wifi_channel_gain(h_r, L_d):
