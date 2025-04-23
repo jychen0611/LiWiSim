@@ -12,7 +12,7 @@ H_pd = 1.2 # m
 # Transmit optical power per LED
 P_vlc = 20 # W
 # VLC system bandwidth
-B_vlc = 20e6 # Hz
+B_vlc = 20 # Hz
 # Semi-angle at half power
 semi_angle_at_helf_power = 60 # degree 
 # Optical filter gain
@@ -26,7 +26,7 @@ B_oe = 0.15 # A/W
 # Wifi transmit power
 P_wifi = 20 # dBm 
 # Wifi bandwidth
-B_wifi = 20e6 # Hz
+B_wifi = 20 # MHz
 # Wifi noise spectral density
 N_wifi = -174 # dBm/Hz
 # Wifi receiver power range
@@ -50,54 +50,25 @@ FoV = 60 # degree
 
 if __name__ == "__main__":
     print("Simulation Start!")
+    
+    # Uniformly generate the location of each VLC AP/UE
     ue_locations = [l.generate_ue_location() for _ in range(N_ue)]
     vlc_locations = l.generate_vlc_location()
+    # Define location of WiFi AP
     wifi_location = (5, 5, 3)
-    # print(ue_locations[0])
-    # print(vlc_locations[4])
-    # print(wifi_location)
-    # print(l.geometric_distance(ue_locations[0], vlc_locations[4]), l.geometric_distance(ue_locations[0], wifi_location)) 
 
+    # Calculate the geometric distance of each AP/UE pair
     distance = [[l.geometric_distance(ue_locations[i], vlc_locations[j]) for j in range(N_vlc)] for i in range(N_ue)]
-    # print(distance)
-    # Visualize LiWi Network 
-    #p.plot_network_distribution(ue_locations, vlc_locations, wifi_location)
 
+    # Visualize LiWi Network 
+    p.plot_network_distribution(ue_locations, vlc_locations, wifi_location)
+
+    # Calculate the angle between each VLC AP/UE
     angle = [[l.calculate_angles(ue_locations[i], vlc_locations[j])[0] for j in range(N_vlc)] for i in range(N_ue)]
+    # Calculate optical concenteator
     optical_concentrator = [[f.optical_concentrator(incident_angle=angle[i][j]) for j in range(N_vlc)] for i in range(N_ue)]
 
-    vlc_channel_gain = [[f.vlc_channel_gain(m=f.lambertian_emission_order(semi_angle_at_helf_power), A_pd=A_pd, d=distance[i][j], irradiant_angle=60, incident_angle=60, Fov=FoV, optical_filter_gain=optical_filter_gain, optical_concentrator=f.optical_concentrator(60, FoV)) for j in range(N_vlc)] for i in range(N_ue)]
-    # print(vlc_channel_gain)
-    #p.plot_vlc_channel_gain_matrix(vlc_channel_gain)
-
-    total_channel_gain = []
-    for j in range(N_vlc):
-        total = 0
-        for i in range(N_ue):
-            total += vlc_channel_gain[i][j]
-        total_channel_gain.append(total)
-    # shot = f.shot_noise(P_sig=0.1, P_ici=0.1)
-    # print(shot)
-    thermal = f.thermal_noise()
-    #print(thermal)
-    vlc_sinr = [[f.vlc_sinr(oe_conversion=R_oe, P_vlc=P_vlc, H_vlc=vlc_channel_gain[i][j], shot=f.shot_noise(P_sig=R_oe*P_vlc*vlc_channel_gain[i][j], P_ici=R_oe*P_vlc*(total_channel_gain[j] - vlc_channel_gain[i][j])), thermal=thermal, interference=0.3) for j in range(N_vlc)] for i in range(N_ue)]
-    # print(vlc_sinr)
-    #p.plot_vlc_sinr_matrix(vlc_sinr)
-
-    vlc_data_rate = [[f.vlc_data_rate(B_vlc=B_vlc, sinr=vlc_sinr[i][j]) for j in range(N_vlc)] for i in range(N_ue)]
-    # print(vlc_data_rate)
-    #p.plot_vlc_data_rate_matrix(vlc_data_rate)
-
-
-    wifi_channel_gain = [f.wifi_channel_gain(h_r=f.generate_rayleigh_hr(), L_d=f.large_scale_fading_loss(l.geometric_distance(ue_locations[i], wifi_location))) for i in range(N_ue)]
-    #p.plot_wifi_channel_gain_vector(wifi_channel_gain)
-
-    wifi_snr = [f.wifi_snr(P_wifi=P_wifi, H_wifi=wifi_channel_gain[i], N_wifi=N_wifi, B_wifi=B_wifi) for i in range(N_ue)]
-    #p.plot_wifi_snr_vector(wifi_snr)
-
-    wifi_data_rate = [f.wifi_data_rate(B_wifi=B_wifi, snr=wifi_snr[i]) for i in range(N_ue)]
-    #p.plot_wifi_data_rate_vector(wifi_data_rate)
-
+    # Generate the available VLC AP set of each UE
     K = []
     for i in range(N_ue):
         Ki = set()
@@ -106,7 +77,49 @@ if __name__ == "__main__":
                 Ki.add(j)
         K.append(Ki)
 
-    a.VASIA(N_ue=N_ue, K=K, distance=distance, angle=angle, optical_concentrator=optical_concentrator)
+
+    # Calculate VLC data rate based on R-band
+    vlc_channel_gain = [[0 for j in range(N_vlc)] for i in range(N_ue)]
+    vlc_sinr = [[0 for j in range(N_vlc)] for i in range(N_ue)]
+    vlc_data_rate = [[0 for j in range(N_vlc)] for i in range(N_ue)]
+    # For each UE
+    for i in range(N_ue):
+        # For each available AP of UE_i
+        for j in K[i]:
+            # Calculate channel gain
+            vlc_channel_gain[i][j] = f.vlc_channel_gain(d = distance[i][j], irradiant_angle=angle[i][j], incident_angle=angle[i][j], optical_concentrator=optical_concentrator[i][j])
+            # Calculate the inter-cell interference of this connection
+            interference = 0
+            P_ici = 0
+            for k in K[i]:
+                if k==j:
+                    continue 
+                P_ici += 0.44*6.66*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k])
+                interference += (0.44*6.66*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k])) ** 2 
+            # Calculate shot noise
+            shot = f.shot_noise(P_sig=0.44*6.66*vlc_channel_gain[i][j], P_ici=P_ici)
+            # Calculate sinr
+            vlc_sinr[i][j] = f.vlc_sinr(H_vlc=vlc_channel_gain[i][j], shot=shot, interference=interference)
+            # Calculate data rate
+            vlc_data_rate[i][j] = f.vlc_data_rate(sinr=vlc_sinr[i][j])
+    
+    # print(vlc_channel_gain)
+    p.plot_vlc_channel_gain_matrix(vlc_channel_gain)
+    # print(vlc_sinr)
+    p.plot_vlc_sinr_matrix(vlc_sinr)
+    # print(vlc_data_rate)
+    p.plot_vlc_data_rate_matrix(vlc_data_rate)
+
+
+    wifi_channel_gain = [f.wifi_channel_gain(h_r=f.generate_rayleigh_hr(), L_d=f.large_scale_fading_loss(l.geometric_distance(ue_locations[i], wifi_location))) for i in range(N_ue)]
+    # p.plot_wifi_channel_gain_vector(wifi_channel_gain)
+    wifi_snr = [f.wifi_snr(P_wifi=P_wifi, H_wifi=wifi_channel_gain[i], N_wifi=N_wifi, B_wifi=B_wifi) for i in range(N_ue)]
+    # p.plot_wifi_snr_vector(wifi_snr)
+    wifi_data_rate = [f.wifi_data_rate(B_wifi=B_wifi, snr=wifi_snr[i]) for i in range(N_ue)]
+    # p.plot_wifi_data_rate_vector(wifi_data_rate)
+
+
+    # a.VASIA(N_ue=N_ue, K=K, distance=distance, angle=angle, optical_concentrator=optical_concentrator)
 
 
 

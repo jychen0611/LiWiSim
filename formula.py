@@ -27,13 +27,13 @@ class Formula():
         Fov_rad = math.radians(Fov)
         return (n**2)/(math.sin(Fov_rad)**2)
 
-    def vlc_sinr(H_vlc, shot, interference, oe_conversion=0.44, P_vlc=6.66, thermal=3.9087079981627857e-16):
+    def vlc_sinr(H_vlc, shot, interference, oe_conversion=0.44, P_vlc=6.66, thermal=3.301237784295836e-10):
         return ((oe_conversion*P_vlc*H_vlc)**2)/((shot**2)+(thermal**2)+interference)
     
     def shot_noise(P_sig, P_ici):
         q = 1.6e-19
         Re = 0.54
-        B = 10e6 
+        B = 10 
         I_bg = 5.1e-3 
         I_2 = 0.562
         return 2*q*Re*(P_sig+P_ici)*B + 2*q*I_bg*I_2*B
@@ -41,9 +41,9 @@ class Formula():
     def thermal_noise():
         k = 1.28e-23
         Tk = 300 # room temperature 27 degree Celsius 
-        fix_capacitance_pd = 112e-12
+        fix_capacitance_pd = 112
         fet_factor = 1.5
-        B = 10e6
+        B = 10
         A = 1
         I_2 = 0.562
         I_3 = 0.0868
@@ -51,7 +51,7 @@ class Formula():
         gm = 3e-3       
         return ((8*math.pi*k*Tk)/G)*fix_capacitance_pd*A*I_2*(B**2) + ((16*(math.pi**2)*k*Tk*fet_factor)/gm)*(fix_capacitance_pd**2)*(A**2)*I_3*(B**3)
 
-    def vlc_data_rate(sinr, B_vlc=20e6):
+    def vlc_data_rate(sinr, B_vlc=20):
         return B_vlc * math.log2(1+sinr)
     
     def wifi_channel_gain(h_r, L_d):

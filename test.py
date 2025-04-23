@@ -91,7 +91,7 @@ class TestShotNoise(unittest.TestCase):
         # Calculate expected value manually
         q = 1.6e-19
         Re = 0.54
-        B = 10e6
+        B = 10
         I_bg = 5.1e-3
         I_2 = 0.562
         expected = 2*q*Re*(1e-3 + 2e-3)*B + 2*q*I_bg*I_2*B
@@ -101,7 +101,7 @@ class TestShotNoise(unittest.TestCase):
         """Test output when both signal and ICI powers are zero"""
         result = Formula.shot_noise(0, 0)
         q = 1.6e-19
-        B = 10e6
+        B = 10
         I_bg = 5.1e-3
         I_2 = 0.562
         expected = 2*q*I_bg*I_2*B
@@ -144,9 +144,9 @@ class TestThermalNoise(unittest.TestCase):
         """Manually compute expected thermal noise value and compare"""
         k = 1.28e-23
         Tk = 300
-        fix_cap = 112e-12
+        fix_cap = 112
         fet_factor = 1.5
-        B = 10e6
+        B = 10
         A = 1
         I_2 = 0.562
         I_3 = 0.0868
