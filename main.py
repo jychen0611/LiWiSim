@@ -3,6 +3,7 @@ from location import Location as l
 from plot import Plot as p
 from algorithm import Algorithm as a
 import math
+import random
 # Room size
 L = 10 # m
 W = 10 # m
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     distance = [[l.geometric_distance(ue_locations[i], vlc_locations[j]) for j in range(N_vlc)] for i in range(N_ue)]
 
     # Visualize LiWi Network 
-    p.plot_network_distribution(ue_locations, vlc_locations, wifi_location)
+    # p.plot_network_distribution(ue_locations, vlc_locations, wifi_location)
 
     # Calculate the angle between each VLC AP/UE
     angle = [[l.calculate_angles(ue_locations[i], vlc_locations[j])[0] for j in range(N_vlc)] for i in range(N_ue)]
@@ -76,6 +77,19 @@ if __name__ == "__main__":
             if optical_concentrator[i][j]>0:
                 Ki.add(j)
         K.append(Ki)
+
+    # Generate the servable UE set of each VLC AP
+    H = []
+    for j in range(N_vlc):
+        Hj = set()
+        for i in range(N_ue):
+            if optical_concentrator[i][j]>0:
+                Hj.add(i)
+        H.append(Hj)
+
+    # Generate the required data rate (Mbps) of each UE
+    rate_options = {10, 20, 40, 60, 80, 100}
+    r = [random.choice(list(rate_options)) for i in range(N_ue)]
 
 
     # Calculate VLC data rate based on R-band
@@ -104,11 +118,11 @@ if __name__ == "__main__":
             vlc_data_rate[i][j] = f.vlc_data_rate(sinr=vlc_sinr[i][j])
     
     # print(vlc_channel_gain)
-    p.plot_vlc_channel_gain_matrix(vlc_channel_gain)
+    # p.plot_vlc_channel_gain_matrix(vlc_channel_gain)
     # print(vlc_sinr)
-    p.plot_vlc_sinr_matrix(vlc_sinr)
+    # p.plot_vlc_sinr_matrix(vlc_sinr)
     # print(vlc_data_rate)
-    p.plot_vlc_data_rate_matrix(vlc_data_rate)
+    # p.plot_vlc_data_rate_matrix(vlc_data_rate)
 
 
     wifi_channel_gain = [f.wifi_channel_gain(h_r=f.generate_rayleigh_hr(), L_d=f.large_scale_fading_loss(l.geometric_distance(ue_locations[i], wifi_location))) for i in range(N_ue)]
@@ -119,7 +133,7 @@ if __name__ == "__main__":
     # p.plot_wifi_data_rate_vector(wifi_data_rate)
 
 
-    # a.VASIA(N_ue=N_ue, K=K, distance=distance, angle=angle, optical_concentrator=optical_concentrator)
-
+    vlc_ap_selection_order = a.VASIA(N_ue=N_ue, K=K, H=H, r=r, distance=distance, angle=angle, optical_concentrator=optical_concentrator)
+    # print(vlc_ap_selection_order)
 
 

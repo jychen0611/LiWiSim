@@ -4,7 +4,7 @@ from location import Location as l
 from plot import Plot as p
 
 class Algorithm():
-    def VASIA(N_ue:int, K:List[Set[int]], distance:List[List[float]], angle:List[List[float]], optical_concentrator:List[List[float]]):
+    def VASIA(N_ue:int, K:List[Set[int]], H:List[Set[int]], r:List[int], distance:List[List[float]], angle:List[List[float]], optical_concentrator:List[List[float]]) -> List[List[int]]:
 
         N_ap = 16
         # positive influence
@@ -14,6 +14,9 @@ class Algorithm():
         Z = [[set() for j in range(N_ap)] for i in range(N_ue)]
         V = [[0 for j in range(N_ap)] for i in range(N_ue)]
         alpha = [[0 for j in range(N_ap)] for i in range(N_ue)]
+        # The VLC AP selection order of each UE
+        vlc_ap_selection_order = [[] for _ in range(N_ue)]
+        # Calculate the positive influence of each connection
         for i in range(N_ue):
             for j in K[i]:
                 # Calculate q_ij by equation (9)
@@ -29,28 +32,64 @@ class Algorithm():
                 sinr = f.vlc_sinr(H_vlc=H_vlc, shot=shot, interference=interference)
                 q[i][j] = f.vlc_data_rate(sinr=sinr)
 
-        
+        for i in range(N_ue):
+            tmp = []
+            for j in K[i]:
                 # Generate the primary UE set Y_ij 
-            
-                # for k in Y_ij:
+                Y[i][j] = H[j] - {i}
+                # print("Primary ", i, j, " : ", Y[i][j])
+
+                V_kij = [0 for _ in range(N_ue)] 
+                for k in Y[i][j]:
                     # Calculate v_k_ij by equation (10)
                     # Calculate V_k_ij by equation (11)
+                    V_k_ij = 0
+                    for l in K[k]:
+                        V_k_ij += q[k][l] * ((r[k]-5)/(100-10))
+                    V_kij[k] = V_k_ij
                 # end for
-            # end for
             
-            # Generate Z_ij by equation (12)
-            
-            # for l in Z_ij:
-                # Calculate v_l_ij by equation (13) 
-                # Calculate V_l_ij by equation (14)
+                # Generate secondary UE set Z_ij by equation (12)
+                Z[i][j] = set()
+                for l in K[i]:
+                    if l == j:
+                        continue
+                    Z[i][j] = Z[i][j] | H[l]
+                Z[i][j] = Z[i][j] - H[j]
+                # print("Secondary ", i, j, " : ", Z[i][j])
+
+                V_lij = [0 for _ in range(N_ue)] 
+                for l in Z[i][j]:
+                    # Calculate v_l_ij by equation (13) 
+                    # Calculate V_l_ij by equation (14)
+                    V_l_ij = 0
+                    for k in (K[l] & K[i]):
+                        V_l_ij += q[l][k] * ((r[l]-5)/(100-10))
+                    V_lij[l] = V_l_ij
+                # end for
+
+                # Calculate V_ij by equation (15)
+                V[i][j] = 0
+                for k in Y[i][j]:
+                    V[i][j] += V_kij[k]
+                for l in Z[i][j]:
+                    V[i][j] += V_lij[l]
+                # Calculate alpha_ij by equation (16)
+                alpha[i][j] = V[i][j]/q[i][j]
+               
+                # print("V: ", i, j, V[i][j])
+                # print("alpha: ", i, j, alpha[i][j])
+                tmp.append([j, alpha[i][j]])
             # end for
 
-            # Calculate V_ij by equation (15)
-            # Calculate alpha_ij by equation (16)
+            # Generate the VLC AP selection order of UE_i by the order of alpha_ij from small to large.
+            # Sort VLC order by alpha 
+            vlc_order = [ap_idx for ap_idx, alpha in sorted(tmp, key=lambda x: x[1])]
+            vlc_ap_selection_order[i] = vlc_order
+            # print("vlc_ap_selection_order: ", i, vlc_ap_selection_order[i])
         # end for
-        p.plot_vlc_data_rate_matrix(q)
-        # Generate the VLC AP selection order of UE_i by the order of alpha_ij from small to large.
-        return 
+        # p.plot_vlc_data_rate_matrix(q)
+        return vlc_ap_selection_order
 
     def UPARU():
         # Initialize the priority factor of each UE to zero;
