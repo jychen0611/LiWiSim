@@ -136,4 +136,5 @@ if __name__ == "__main__":
     vlc_ap_selection_order = a.VASIA(N_ue=N_ue, K=K, H=H, r=r, distance=distance, angle=angle, optical_concentrator=optical_concentrator)
     # print(vlc_ap_selection_order)
 
-
+    ue_order = a.UPARU(N_ue=N_ue, K=K, H=H, r=r, q=vlc_data_rate)
+    # print(ue_order)

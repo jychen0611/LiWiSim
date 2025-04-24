@@ -91,25 +91,43 @@ class Algorithm():
         # p.plot_vlc_data_rate_matrix(q)
         return vlc_ap_selection_order
 
-    def UPARU():
+    def UPARU(N_ue:int, K:List[Set[int]], H:List[Set[int]], r:List[int], q:List[List[float]]):
         # Initialize the priority factor of each UE to zero;
-        
-        # for i in (N_ue):
+        priority = [0 for _ in range(N_ue)]
+        tmp = []
+        for i in range(N_ue):
             # Calculate q_i by equation (17);
-            # Generate Y_i by equation (18);
-        
-            # for k in Y_i:
+            q_i = 0
+            for j in K[i]:
+                q_i = max(q_i, q[i][j])
+            
+            # Generate primary UE set Y_i by equation (18);
+            Y_i = set()
+            for j in K[i]:
+                Y_i = Y_i | H[j]
+            Y_i = Y_i - {i}
+
+            V_i = 0
+            for k in Y_i:
                 # Calculate v_ki by equation (19);
                 # Calculate V_ki by equation (20);
+                V_ki = 0
+                for l in K[k]:
+                    V_ki += q[k][l] * ((r[k]-5)/(100-10))
+                
+                # Calculate V_i by equation (21);
+                V_i += V_ki
             # end for
             
-            # Calculate V_i by equation (21);
-            # Calculate θ_i by equation (22);
-        
+            # Calculate priority factor θ_i by equation (22);
+            priority[i] = (r[i]/q_i) * (q_i - V_i)
+            tmp.append([i, priority[i]])
         # end for
-        
+        # print(priority)
+        # print(tmp)
         # Generate the priority order of each UE according to the order of priority factors from large to small.
-        return
+        ue_order = [ue_idx for ue_idx, priority in sorted(tmp, key=lambda x: x[1], reverse=True)]
+        return ue_order
 
     def MCRAIC():
         # Initialize E i = ∅, G = ∅, Aj = ∅, D i = ∅, Q i = ∅, M 3×Nvlc = {0}, X Nu ×Nvlc = {0};
