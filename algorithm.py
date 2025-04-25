@@ -1,10 +1,10 @@
-from typing import List, Set
+from typing import List, Set, Tuple
 from formula import Formula as f
 from location import Location as l
 from plot import Plot as p
 
 class Algorithm():
-    def VASIA(N_ue:int, K:List[Set[int]], H:List[Set[int]], r:List[int], distance:List[List[float]], angle:List[List[float]], optical_concentrator:List[List[float]]) -> List[List[int]]:
+    def VASIA(N_ue:int, K:List[Set[int]], H:List[Set[int]], r:List[int], distance:List[List[float]], angle:List[List[float]], optical_concentrator:List[List[float]]) -> Tuple[List[List[int]], List[List[float]]]:
 
         N_ap = 16
         # positive influence
@@ -89,7 +89,7 @@ class Algorithm():
             # print("vlc_ap_selection_order: ", i, vlc_ap_selection_order[i])
         # end for
         # p.plot_vlc_data_rate_matrix(q)
-        return vlc_ap_selection_order
+        return vlc_ap_selection_order, alpha
 
     def UPARU(N_ue:int, K:List[Set[int]], H:List[Set[int]], r:List[int], q:List[List[float]]):
         # Initialize the priority factor of each UE to zero;
@@ -129,39 +129,92 @@ class Algorithm():
         ue_order = [ue_idx for ue_idx, priority in sorted(tmp, key=lambda x: x[1], reverse=True)]
         return ue_order
 
-    def MCRAIC():
-        # Initialize E i = ∅, G = ∅, Aj = ∅, D i = ∅, Q i = ∅, M 3×Nvlc = {0}, X Nu ×Nvlc = {0};
+    def MCRAIC(N_ue:int, N_vlc:int, U:List[int], K:List[Set[int]], H:List[Set[int]], alpha:List[List[float]]):
+        # Initialize E_i = ∅, G = ∅, A_j = ∅, D_i = ∅, Q_i = ∅, M_3×N_vlc = {0}, X_N_u×N_vlc = {0};
+        E = [set() for i in range(N_ue)]
+        G = []
+        A = []
+        D = [[] for i in range(N_ue)]
+        Q = [set() for i in range(N_ue)]
+        M = [[0 for _ in range(3)] for j in range(N_vlc)]
+        X = [[0 for j in range(N_vlc)] for i in range(N_ue)]
+        wifi = []
+        # The remaining band of each VLC AP
+        C = [{0, 1, 2} for j in range(N_vlc)]
         # Sort UEs ∈ U by θi in decreasing order;
-        # for each UE − i ∈ U do
-            # for each VLC AP − j ∈ K i do
-                # if αij > α i′j , ∀i ′ ∈ (U i ∩ H j ) then
-                    # remove the VLC AP-j from set K i ;
+        # U is pre-sorted UE set! 
+        for i in U:
+            K_i = []
+            for j in K[i]:
+                Ui = U[i+1:]
+                largest = True
+                for k in (set(Ui) & H[j]):
+                    if alpha[i][j] <= alpha[k][j]:
+                        largest = False
+                        break
+                # if α_ij > α_kj , ∀k ∈ (Ui ∩ H_j ) then
+                if not largest:
+                    # remove the VLC AP-j from set K_i ;
+                    K_i.append(j)
                 # end if
             # end for
-            # Generate the candidate VLC AP set D i = K i ;
-            # if the candidate VLC AP set D i = ∅ then
+
+            # Generate the candidate VLC AP list D_i = K_i ;
+            for j in K_i:
+                D[i].append(j)
+            # if the candidate VLC AP set D_i = ∅ then
+            if not D[i]:
                 # UE-i is connected to the WiFi AP;
+                E[i].add(7)
+                wifi.append(i)
             # end if
-            # for each VLC AP − j ∈ D i do
-                # if αij < αi ′j , i ′ ∈ (U i ∩ H j ) then
-                    # add VLC AP-j into Q i as Q i = Q i ∪ j ;
+            for j in D[i]:
+                avg = 0
+                for k in (set(Ui) & H[j]):
+                    avg += alpha[k][j]
+                avg /= len(set(Ui) & H[j])
+                # if α_ij < avg.(α_kj) , k ∈ (Ui ∩ H_j ) then
+                if alpha[i][j] < avg:
+                    # add VLC AP-j into Q_i as Q_i = Q i ∪ j ;
+                    Q[i].add(j)
                 # end if
             # end for
             # Sort APs ∈ D i by αij in increasing order;
-            # for each VLC AP − j ∈ D i do
-                # if C j =∅ and UE-i is NOT satisfied then
+            D_i = sorted(D[i], key=lambda j: alpha[i][j])
+            for j in D_i:
+                satisfied = False
+                # if C_j != ∅ and UE-i is NOT satisfied then <Todo> check UE satisfication
+                if C[j] and (not satisfied): 
                     # assign an available band to UE-i;
+                    band = C[j].pop()
+                    E[i].add(band)
                     # update the situation of band allocation;
+                    M[j][band] = i
                 # end if
-                # if VLC AP−j ∈ Q i then
+                if j in Q[i]:
                     # repeat the steps from 20 to 23;
+                    satisfied = False
+                    # if C_j != ∅ and UE-i is NOT satisfied then <Todo> check UE satisfication
+                    if C[j] and (not satisfied): 
+                        # assign an available band to UE-i;
+                        band = C[j].pop()
+                        E[i].add(band)
+                        # update the situation of band allocation;
+                        M[j][band] = i
+                    # end if
                 # end if
             # end for
-            # if E i is empty then
+            if not E[i]:
                 # UE-i is connected to the WiFi AP;
+                E[i].add(7)
+                wifi.append(i)
             # end if
         # end for
-        # Sort UEs ∈ U by xi in decreasing order;
+        print("VLC\n", M)
+        print("wifi\n", wifi)
+        print("E\n", E)
+        print("C\n", C)
+        # Sort UEs ∈ U by x_i in decreasing order;
         # for each UE − i ∈ U do
             # for each VLC AP−j ∈ Q i do
                 # if x ij > x i and C j =∅ then
@@ -170,4 +223,4 @@ class Algorithm():
                 # end if
             # end for
         # end for
-        return
+        return M, wifi, E
