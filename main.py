@@ -29,7 +29,7 @@ P_wifi = 20 # dBm
 # Wifi bandwidth
 B_wifi = 20 # MHz
 # Wifi noise spectral density
-N_wifi = -174 # dBm/Hz
+Noise_wifi = -174 # dBm/Hz
 # Wifi receiver power range
 P_w_min = -125 # dBm
 P_w_max = 50 # dBm
@@ -125,13 +125,6 @@ if __name__ == "__main__":
     # p.plot_vlc_data_rate_matrix(vlc_data_rate)
 
 
-    wifi_channel_gain = [f.wifi_channel_gain(h_r=f.generate_rayleigh_hr(), L_d=f.large_scale_fading_loss(l.geometric_distance(ue_locations[i], wifi_location))) for i in range(N_ue)]
-    p.plot_wifi_channel_gain_vector(wifi_channel_gain)
-    wifi_snr = [f.wifi_snr(P_wifi=P_wifi, H_wifi=wifi_channel_gain[i], N_wifi=N_wifi, B_wifi=B_wifi) for i in range(N_ue)]
-    p.plot_wifi_snr_vector(wifi_snr)
-    wifi_data_rate = [f.wifi_data_rate(B_wifi=B_wifi, snr=wifi_snr[i]) for i in range(N_ue)]
-    p.plot_wifi_data_rate_vector(wifi_data_rate)
-
 
     [vlc_ap_selection_order, alpha]= a.VASIA(N_ue=N_ue, K=K, H=H, r=r, distance=distance, angle=angle, optical_concentrator=optical_concentrator)
     # print(vlc_ap_selection_order)
@@ -143,6 +136,7 @@ if __name__ == "__main__":
 
     total_data_rate_of_each_ue = [0 for i in range(N_ue)]
     # Calculate total data rate obtained from VLC AP
+    
     j = 0
     sum_rate = 0
     for m in M:
@@ -151,10 +145,41 @@ if __name__ == "__main__":
         total_data_rate_of_each_ue[m[2]] += vlc_data_rate[m[2]][j]
         sum_rate += (vlc_data_rate[m[0]][j] + vlc_data_rate[m[1]][j] + vlc_data_rate[m[0]][j])
         j += 1
+    
     # print("Sum rate: ", sum_rate)
-    # Calculate data rate obtained from WiFi 
-    #for w in wifi:
-    #    total_data_rate_of_each_ue[w] += wifi_data_rate[w]
 
-    # p.plot_total_data_rate(total_data_rate_of_each_ue)
+    # wifi allocation #################################################################################
+    wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(N_ue)]
+    p.plot_wifi_channel_gain_vector(wifi_channel_gain)
+    wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_ue=len(wifi)) for i in range(N_ue)]
+    p.plot_wifi_snr_vector(wifi_snr)
+    wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_ue=len(wifi)) for i in range(N_ue)]
+    p.plot_wifi_data_rate_vector(wifi_data_rate)
+
+    # Calculate data rate obtained from WiFi 
+    for w in wifi:
+        total_data_rate_of_each_ue[w] += wifi_data_rate[w]
+        sum_rate += wifi_data_rate[w]
+
+    p.plot_total_data_rate(total_data_rate_of_each_ue)
+    print("Sum rate: ", sum_rate)
+
+    '''
+    # wifi test
+    c10 = f.wifi_channel_gain(d=10)
+    c5 = f.wifi_channel_gain(d=10)
+    c1 = f.wifi_channel_gain(d=10)
+    s10 = f.wifi_snr(H_wifi=c10, N_ue=10)
+    s5 = f.wifi_snr(H_wifi=c5, N_ue=10)
+    s1 = f.wifi_snr(H_wifi=c1, N_ue=10)
+    print("d=10")
+    print("snr:", s10)
+    print("data rate:", f.wifi_data_rate(snr=s10, N_ue=10))
+    print("d=5")
+    print("snr:", s5)
+    print("data rate:", f.wifi_data_rate(snr=s5, N_ue=10))
+    print("d=1")
+    print("snr:", s1)
+    print("data rate:", f.wifi_data_rate(snr=s1, N_ue=10))
+    '''
 

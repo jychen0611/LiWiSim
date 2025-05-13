@@ -1,8 +1,76 @@
 import math
 import numpy as np
+import random
+
 def dbm_to_watts(P_dbm):
         """Convert power from dBm to Watts"""
         return 10**((P_dbm - 30) / 10)  # Since 1 mW = 10^(-3) W
+
+def generate_log_normal_shadowing(std_dev_db=10):
+        """
+        Generate log-normal shadowing in dB.
+        Xσ ~ N(0, std_dev_db^2)
+        """
+        return np.random.normal(loc=0.0, scale=std_dev_db)
+
+def wifi_channel_to_frequency(channel, band='2.4GHz'):
+    """
+    Convert Wi-Fi channel number to carrier frequency (MHz).
+    
+    Parameters:
+        channel (int): Wi-Fi channel number
+        band (str): '2.4GHz', '5GHz', or '6GHz'
+        
+    Returns:
+        frequency in MHz or None if invalid
+    """
+    if band == '2.4GHz':
+        if 1 <= channel <= 13:
+            return 2412 + (channel - 1) * 5
+        elif channel == 14:
+            return 2484
+    elif band == '5GHz':
+        if 36 <= channel <= 64:
+            return 5000 + channel * 5
+        elif 100 <= channel <= 144:
+            return 5000 + channel * 5
+        elif 149 <= channel <= 165:
+            return 5000 + channel * 5
+    elif band == '6GHz':
+        if 1 <= channel <= 233:
+            return 5955 + (channel - 1) * 5
+    return None
+
+def generate_rayleigh_hr(avg_power_dB=2.46):
+        """
+        Generate a Rayleigh fading gain h_r with a specified average power in dB.
+        """
+        P_linear = 10 ** (avg_power_dB / 10)
+        sigma = np.sqrt(P_linear / 2)
+        return np.random.rayleigh(scale=sigma)
+
+def large_scale_fading_loss(d):
+        f = wifi_channel_to_frequency(channel=random.randint(1, 14)) * 1e6
+        return 20 * math.log10(d*f) - 147.55 
+
+def get_ru_bandwidth_mhz(N_UE):
+    # Valid RU mappings for 20 MHz
+    ru_table = {
+        1: 20,        # full 20 MHz = 1 × 242-tone RU
+        2: 10,        # 2 × 106-tone RUs (~10 MHz each)
+        3: 5,
+        4: 5,         # 4 × 52-tone RUs (~5 MHz each)
+        5: 2.5, 
+        6: 2.5,
+        7: 2.5,
+        8: 2.5,       # 8 × 26-tone RUs (~2.5 MHz each)
+        9: 2.22       # 9 × 26-tone RUs (~2.22 MHz each)
+    }
+
+    if N_UE in ru_table:
+        return ru_table[N_UE]
+    else:
+        raise ValueError(f"802.11ax 20 MHz channel does not support {N_UE} UEs with valid RU sizes.")
 
 class Formula():
 
@@ -54,28 +122,24 @@ class Formula():
     def vlc_data_rate(sinr, B_vlc=20/3):
         return B_vlc * math.log2(1+sinr)
     
-    def wifi_channel_gain(h_r, L_d):
-        return (10 ** (-L_d/20)) * h_r
+    def wifi_channel_gain(d):
+        h_r = generate_rayleigh_hr()
+        L_d = large_scale_fading_loss(d=d)
+        return (h_r**2) * (10 ** ((-L_d+generate_log_normal_shadowing()) / 10))  # Rayleigh power * path loss
     
-    def generate_rayleigh_hr(avg_power_dB=2.46):
-        """
-        Generate a Rayleigh fading gain h_r with a specified average power in dB.
-        """
-        P_linear = 10 ** (avg_power_dB / 10)
-        sigma = np.sqrt(P_linear / 2)
-        return np.random.rayleigh(scale=sigma)
-
-    def large_scale_fading_loss(d):
-        # Set parameters
-        mean = 0       # Zero-mean
-        std_dev = 1.8  # Standard deviation in dB
-        # Generate one sample of Z
-        Z = np.random.normal(loc=mean, scale=std_dev)
-        return 68 + 10*1.6*math.log10(d/1) + Z  
+    def wifi_snr(H_wifi, N_ue):
+        P_tx_wifi = 20 # dbm
+        N_wifi = -174 # dBm
+        B_wifi = 20e6 # Hz
+        P_rx_min = -125 # dBm
+        P_rx_max = 50 # dBm
+        P_rx_watts = (dbm_to_watts(P_tx_wifi) / N_ue) * H_wifi
+        P_rx_dbm = 10 * np.log10(P_rx_watts) + 30
+        P_rx_dbm = np.clip(P_rx_dbm, P_rx_min, P_rx_max)
+        P_rx_watts_clamped = dbm_to_watts(P_rx_dbm)
+        return P_rx_watts_clamped / (dbm_to_watts(N_wifi)*B_wifi)
     
-    def wifi_snr(P_wifi, H_wifi, N_wifi, B_wifi):
-        return (dbm_to_watts(P_wifi)*(H_wifi ** 2))/(dbm_to_watts(N_wifi)*B_wifi)
-    
-    def wifi_data_rate(B_wifi, snr):
+    def wifi_data_rate(snr, N_ue):
+        B_wifi = get_ru_bandwidth_mhz(N_UE=N_ue)
         return B_wifi * math.log2(1+snr)
     
