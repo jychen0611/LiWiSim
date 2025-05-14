@@ -2,7 +2,7 @@
 L = 10 # m
 W = 10 # m
 H = 3 # m
-# Height of receiving plan
+# Height of receiving plane
 H_PD = 1.2 # m
 # Transmit optical power per LED
 P_TX_VLC = 20 # W
