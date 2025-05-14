@@ -76,14 +76,13 @@ def get_ru_bandwidth_mhz(N_wifi_ue):
 
 class Formula():
 
-    def vlc_channel_gain(d:float, irradiant_angle:float, incident_angle:float, optical_concentrator:float):
+    def vlc_channel_gain(d:float, irradiant_angle:float, incident_angle:float, optical_concentrator:float, FoV:float):
         m = 1.0000000000000002
         A_pd = cfg.A_PD
-        Fov = cfg.F_O_V
         optical_filter_gain = cfg.OPTICAL_FILTER_GAIN
 
         assert d != 0, "Distance (d) must not be zero to avoid division by zero."
-        if incident_angle > Fov :
+        if incident_angle > FoV :
             return 0
         irradiant_angle_rad = math.radians(irradiant_angle)  # Convert degrees to radians
         incident_angle_rad = math.radians(incident_angle)
@@ -96,13 +95,12 @@ class Formula():
         semi_angle_at_helf_power_rad = math.radians(semi_angle_at_helf_power)
         return -math.log(2)/math.log(math.cos(semi_angle_at_helf_power_rad))
 
-    def optical_concentrator(incident_angle:float):
-        Fov=cfg.F_O_V
-        if incident_angle > Fov :
+    def optical_concentrator(incident_angle:float, FoV:float):
+        if incident_angle > FoV :
             return 0
         n = 1.5
-        Fov_rad = math.radians(Fov)
-        return (n**2)/(math.sin(Fov_rad)**2)
+        FoV_rad = math.radians(FoV)
+        return (n**2)/(math.sin(FoV_rad)**2)
 
     def vlc_sinr(H_vlc:float, shot:float, interference:float, band:int):
         if band == 0:

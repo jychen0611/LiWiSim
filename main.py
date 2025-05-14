@@ -11,33 +11,31 @@ def dbm_to_watts(P_dbm):
     """Convert power from dBm to Watts"""
     return 10**((P_dbm - 30) / 10)  # Since 1 mW = 10^(-3) W
 
-
-if __name__ == "__main__":
-    print("Simulation Start!")
+def simulation(N_UE, FoV):
     
     # Uniformly generate the location of each VLC AP/UE
-    ue_locations = [l.generate_ue_location() for _ in range(cfg.N_UE)]
+    ue_locations = [l.generate_ue_location() for _ in range(N_UE)]
     vlc_locations = l.generate_vlc_location(cfg.N_VLC)
     # Define location of WiFi AP
     wifi_location = (5, 5, 3)
 
     # Calculate the geometric distance of each AP/UE pair
-    distance = [[l.geometric_distance(ue_locations[i], vlc_locations[j]) for j in range(cfg.N_VLC)] for i in range(cfg.N_UE)]
+    distance = [[l.geometric_distance(ue_locations[i], vlc_locations[j]) for j in range(cfg.N_VLC)] for i in range(N_UE)]
 
     # Visualize LiWi Network 
     # p.plot_network_distribution(ue_locations, vlc_locations, wifi_location)
-    p.plot_network_distribution_with_labels(ue_locations, vlc_locations, wifi_location)
+    # p.plot_network_distribution_with_labels(ue_locations, vlc_locations, wifi_location)
     # Calculate the angle between each VLC AP/UE
-    angle = [[l.calculate_angles(ue_locations[i], vlc_locations[j])[0] for j in range(cfg.N_VLC)] for i in range(cfg.N_UE)]
+    angle = [[l.calculate_angles(ue_locations[i], vlc_locations[j])[0] for j in range(cfg.N_VLC)] for i in range(N_UE)]
     # Calculate optical concenteator
-    optical_concentrator = [[f.optical_concentrator(incident_angle=angle[i][j]) for j in range(cfg.N_VLC)] for i in range(cfg.N_UE)]
+    optical_concentrator = [[f.optical_concentrator(incident_angle=angle[i][j], FoV=FoV) for j in range(cfg.N_VLC)] for i in range(N_UE)]
 
     # Generate the available VLC AP set of each UE
     K = []
-    for i in range(cfg.N_UE):
+    for i in range(N_UE):
         Ki = set()
         for j in range(cfg.N_VLC):
-            if angle[i][j]<cfg.F_O_V:
+            if angle[i][j]<FoV:
                 Ki.add(j)
         K.append(Ki)
 
@@ -45,30 +43,30 @@ if __name__ == "__main__":
     H = []
     for j in range(cfg.N_VLC):
         Hj = set()
-        for i in range(cfg.N_UE):
-            if angle[i][j]<cfg.F_O_V:
+        for i in range(N_UE):
+            if angle[i][j]<FoV:
                 Hj.add(i)
         H.append(Hj)
 
     # Generate the required data rate (Mbps) of each UE
     rate_options = {10, 20, 40, 60, 80, 100}
-    require_data_rate = [random.choice(list(rate_options)) for i in range(cfg.N_UE)]
+    require_data_rate = [random.choice(list(rate_options)) for i in range(N_UE)]
 
 
     # Calculate VLC data rate based on R-band / G-band / B-band
-    vlc_channel_gain = [[0 for j in range(cfg.N_VLC)] for i in range(cfg.N_UE)]
-    vlc_sinr_R = [[0 for j in range(cfg.N_VLC)] for i in range(cfg.N_UE)]
-    vlc_data_rate_R = [[0 for j in range(cfg.N_VLC)] for i in range(cfg.N_UE)]
-    vlc_sinr_G = [[0 for j in range(cfg.N_VLC)] for i in range(cfg.N_UE)]
-    vlc_data_rate_G = [[0 for j in range(cfg.N_VLC)] for i in range(cfg.N_UE)]
-    vlc_sinr_B = [[0 for j in range(cfg.N_VLC)] for i in range(cfg.N_UE)]
-    vlc_data_rate_B = [[0 for j in range(cfg.N_VLC)] for i in range(cfg.N_UE)]
+    vlc_channel_gain = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+    vlc_sinr_R = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+    vlc_data_rate_R = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+    vlc_sinr_G = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+    vlc_data_rate_G = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+    vlc_sinr_B = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+    vlc_data_rate_B = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
     # For each UE
-    for i in range(cfg.N_UE):
+    for i in range(N_UE):
         # For each available AP of UE_i
         for j in K[i]:
             # Calculate channel gain
-            vlc_channel_gain[i][j] = f.vlc_channel_gain(d = distance[i][j], irradiant_angle=angle[i][j], incident_angle=angle[i][j], optical_concentrator=optical_concentrator[i][j])
+            vlc_channel_gain[i][j] = f.vlc_channel_gain(d = distance[i][j], irradiant_angle=angle[i][j], incident_angle=angle[i][j], optical_concentrator=optical_concentrator[i][j], FoV=FoV)
             # Calculate the inter-cell interference of R-band
             interference = 0
             P_ici = 0
@@ -78,8 +76,8 @@ if __name__ == "__main__":
                 if k==j:
                     continue 
 
-                P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k])
-                interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k])) ** 2 )
+                P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)
+                interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)) ** 2 )
             # Calculate shot noise
             shot = f.shot_noise(P_sig=OE*P_tx_watts*vlc_channel_gain[i][j], P_ici=P_ici)
             # Calculate sinr
@@ -96,8 +94,8 @@ if __name__ == "__main__":
                 if k==j:
                     continue 
 
-                P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k])
-                interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k])) ** 2 )
+                P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)
+                interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)) ** 2 )
             # Calculate shot noise
             shot = f.shot_noise(P_sig=OE*P_tx_watts*vlc_channel_gain[i][j], P_ici=P_ici)
             # Calculate sinr
@@ -114,8 +112,8 @@ if __name__ == "__main__":
                 if k==j:
                     continue 
 
-                P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k])
-                interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k])) ** 2 )
+                P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)
+                interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)) ** 2 )
             # Calculate shot noise
             shot = f.shot_noise(P_sig=OE*P_tx_watts*vlc_channel_gain[i][j], P_ici=P_ici)
             # Calculate sinr
@@ -126,25 +124,25 @@ if __name__ == "__main__":
     vlc_data_rate = [vlc_data_rate_R, vlc_data_rate_G, vlc_data_rate_B]
 
     # print(vlc_channel_gain)
-    p.plot_vlc_channel_gain_matrix(vlc_channel_gain)
+    # p.plot_vlc_channel_gain_matrix(vlc_channel_gain)
     # print(vlc_sinr)
-    p.plot_vlc_sinr_matrix(vlc_sinr_R)
+    # p.plot_vlc_sinr_matrix(vlc_sinr_R)
     # print(vlc_data_rate)
-    p.plot_vlc_data_rate_matrix(vlc_data_rate_R)
+    # p.plot_vlc_data_rate_matrix(vlc_data_rate_R)
 
     
 
 
 
-    [vlc_ap_selection_order, alpha]= a.VASIA(N_ue=cfg.N_UE, K=K, H=H, r=require_data_rate, distance=distance, angle=angle, optical_concentrator=optical_concentrator)
+    [vlc_ap_selection_order, alpha]= a.VASIA(N_ue=N_UE, K=K, H=H, r=require_data_rate, distance=distance, angle=angle, optical_concentrator=optical_concentrator, FoV=FoV)
     # print(vlc_ap_selection_order)
     # print(alpha)
-    ue_order = a.UPARU(N_ue=cfg.N_UE, K=K, H=H, r=require_data_rate, q=vlc_data_rate_R)
+    ue_order = a.UPARU(N_ue=N_UE, K=K, H=H, r=require_data_rate, q=vlc_data_rate_R)
     # print(ue_order)
-    [M, wifi, ue_allocation] = a.MCRAIC(N_ue=cfg.N_UE, N_vlc=cfg.N_VLC, U=ue_order, K=K, H=H, alpha=alpha, required_data_rate=require_data_rate, vlc_data_rate=vlc_data_rate)
+    [M, wifi, ue_allocation] = a.MCRAIC(N_ue=N_UE, N_vlc=cfg.N_VLC, U=ue_order, K=K, H=H, alpha=alpha, required_data_rate=require_data_rate, vlc_data_rate=vlc_data_rate)
     # p.plot_ue_allocation_2d_with_legend(ue_allocation)
 
-    total_data_rate_of_each_ue = [0 for i in range(cfg.N_UE)]
+    total_data_rate_of_each_ue = [0 for i in range(N_UE)]
     # Calculate total data rate obtained from VLC AP
     
     j = 0
@@ -158,12 +156,12 @@ if __name__ == "__main__":
     
 
     # wifi allocation #################################################################################
-    wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(cfg.N_UE)]
-    p.plot_wifi_channel_gain_vector(wifi_channel_gain)
-    wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=len(wifi)) for i in range(cfg.N_UE)]
-    p.plot_wifi_snr_vector(wifi_snr)
-    wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_wifi_ue=len(wifi)) for i in range(cfg.N_UE)]
-    p.plot_wifi_data_rate_vector(wifi_data_rate)
+    wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(N_UE)]
+    # p.plot_wifi_channel_gain_vector(wifi_channel_gain)
+    wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=len(wifi)) for i in range(N_UE)]
+    # p.plot_wifi_snr_vector(wifi_snr)
+    wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_wifi_ue=len(wifi)) for i in range(N_UE)]
+    #p.plot_wifi_data_rate_vector(wifi_data_rate)
 
     # Calculate data rate obtained from WiFi 
     for w in wifi:
@@ -171,8 +169,32 @@ if __name__ == "__main__":
         sum_rate += wifi_data_rate[w]
     
 
-    p.plot_total_data_rate(total_data_rate_of_each_ue=total_data_rate_of_each_ue, require_data_rate=require_data_rate)
+    # p.plot_total_data_rate(total_data_rate_of_each_ue=total_data_rate_of_each_ue, require_data_rate=require_data_rate)
     print("Sum rate: ", sum_rate)
+    return sum_rate
+
+
+
+if __name__ == "__main__":
+    print("Simulation Start!")
+
+    # FoV v.s. System Throughput
+    avg_sum_rate = []
+    for i in range(30, 91, 5):  # FoV from 30 to 90 with step size 5
+        sum_rate = 0
+        for j in range(100):
+            sum_rate += simulation(N_UE=cfg.N_UE, FoV=i)
+        avg_sum_rate.append(sum_rate/100) 
+    p.plot_fov_vs_throughput(avg_sum_rate)
+
+    # N_UE v.s. System Throughput
+    avg_sum_rate = []
+    for i in range(1, 25, 1):  # N_UE from 1 to 25 with step size 1
+        sum_rate = 0
+        for j in range(100):
+            sum_rate += simulation(N_UE=i, FoV=cfg.F_O_V)
+        avg_sum_rate.append(sum_rate/100) 
+    p.plot_nue_vs_throughput(avg_sum_rate)
 
     '''
     # wifi test

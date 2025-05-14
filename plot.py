@@ -408,3 +408,25 @@ class Plot():
         plt.grid(axis='y', linestyle='--', alpha=0.7)
         plt.tight_layout()
         plt.show()
+
+    def plot_fov_vs_throughput(avg_sum_rate:List[float]):
+        fov_range = list(range(30, 91, 5))
+        # Plotting
+        plt.figure()
+        plt.plot(fov_range, avg_sum_rate, marker='o')
+        plt.title('FoV vs. System Throughput')
+        plt.xlabel('Field of View (degrees)')
+        plt.ylabel('Average System Throughput (Mbps)')
+        plt.grid(True)
+        plt.show()
+    
+    def plot_nue_vs_throughput(avg_sum_rate:List[float]):
+        nue_range = list(range(1, 25, 1))
+        # Plotting
+        plt.figure()
+        plt.plot(nue_range, avg_sum_rate, marker='o')
+        plt.title('N_UE vs. System Throughput')
+        plt.xlabel('Number of UEs')
+        plt.ylabel('Average System Throughput (Mbps)')
+        plt.grid(True)
+        plt.show()
