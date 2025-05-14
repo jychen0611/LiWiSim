@@ -31,11 +31,11 @@ P_WIFI_MAX = 50 # dBm
 P_VLC_MIN = 50e-6 # W
 P_VLC_MAX = 10e-3 # W
 
-# Number of VLC AP9s
-N_VLC = 9
+# Number of VLC APs
+N_VLC = 16
 # Number of WiFi APs
 N_WIFI = 1
 # Default number of UEs
 N_UE = 20
 # Default field of view angle of PD
-F_O_V = 50 # degree
+F_O_V = 60 # degree
