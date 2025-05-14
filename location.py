@@ -8,7 +8,7 @@ class Location():
     def generate_ue_location():
         x = random.uniform(0, cfg.L)  # x-coordinate in [0, 10)
         y = random.uniform(0, cfg.W)  # y-coordinate in [0, 10)
-        return (x, y, 0)
+        return (x, y, cfg.H_PD)
 
     def generate_vlc_location(N_vlc: int):
         vlc_location = []
