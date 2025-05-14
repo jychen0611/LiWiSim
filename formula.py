@@ -104,15 +104,20 @@ class Formula():
         Fov_rad = math.radians(Fov)
         return (n**2)/(math.sin(Fov_rad)**2)
 
-    def vlc_sinr(H_vlc:float, shot:float, interference:float):
-        P_tx_vlc = cfg.P_TX_VLC # dBm
+    def vlc_sinr(H_vlc:float, shot:float, interference:float, band:int):
+        if band == 0:
+            P_tx_vlc = cfg.P_TX_VLC_R # dBm
+        elif band == 1:
+            P_tx_vlc = cfg.P_TX_VLC_G # dBm
+        elif band == 2:
+            P_tx_vlc = cfg.P_TX_VLC_B # dBm
         oe_conversion = cfg.R_OE
         thermal = 3.301237784295836e-10
         # PD light power range
         P_v_min = cfg.P_VLC_MIN # W
         P_v_max = cfg.P_VLC_MAX # W
 
-        P_rx_watts = (dbm_to_watts(P_tx_vlc) / 3) * H_vlc 
+        P_rx_watts = P_tx_vlc * H_vlc 
         P_rx_watts_clamped = np.clip(P_rx_watts, P_v_min, P_v_max) 
         return ((oe_conversion*P_rx_watts_clamped)**2)/(shot+thermal+interference)
     

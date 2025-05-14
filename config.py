@@ -1,3 +1,7 @@
+def dbm_to_watts(P_dbm):
+    """Convert power from dBm to Watts"""
+    return 10**((P_dbm - 30) / 10)  # Since 1 mW = 10^(-3) W
+
 # Room size
 L = 10 # m
 W = 10 # m
@@ -5,7 +9,9 @@ H = 3 # m
 # Height of receiving plane
 H_PD = 1.2 # m
 # Transmit optical power per LED
-P_TX_VLC = 20 # W
+P_TX_VLC_R = dbm_to_watts(20) * 0.333 # W
+P_TX_VLC_G = dbm_to_watts(20) * 0.38 # W
+P_TX_VLC_B = dbm_to_watts(20) * 0.287 # W
 # VLC system bandwidth
 B_VLC = 20 # Hz
 # Semi-angle at half power
@@ -36,6 +42,6 @@ N_VLC = 16
 # Number of WiFi APs
 N_WIFI = 1
 # Default number of UEs
-N_UE = 20
+N_UE = 25
 # Default field of view angle of PD
 F_O_V = 60 # degree
