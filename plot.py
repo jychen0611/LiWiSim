@@ -1,11 +1,14 @@
+import config as cfg
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 from typing import List
 
+
+
 class Plot():
 
-    def plot_network_distribution_with_labels(ue_locations, vlc_locations, wifi_location, fov_deg=60, ceiling_height=3.0):
+    def plot_network_distribution_with_labels(ue_locations, vlc_locations, wifi_location, fov_deg=cfg.F_O_V, ceiling_height=3.0):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
@@ -31,14 +34,17 @@ class Plot():
         # Draw VLC FOV ground circles
         fov_rad = np.radians(fov_deg)
         radius = ceiling_height * np.tan(fov_rad)
+        i=0
         for (x, y, z) in vlc_locations:
-            if x == 6 and y == 6:
+            if i == (int)(cfg.N_VLC/2):
                 Plot.draw_vlc_fov_cone(ax, x, y, z, radius, ceiling_height)
+            i += 1
+    
 
         # Set room boundaries
-        ax.set_xlim(0, 10)
-        ax.set_ylim(0, 10)
-        ax.set_zlim(0, 3)
+        ax.set_xlim(0, cfg.L)
+        ax.set_ylim(0, cfg.W)
+        ax.set_zlim(0, cfg.H)
 
         # Labeling
         ax.set_xlabel('X (m)')
@@ -48,7 +54,7 @@ class Plot():
         ax.legend()
         plt.show()
 
-    def plot_network_distribution(ue_locations, vlc_locations, wifi_location, fov_deg=60, ceiling_height=3.0):
+    def plot_network_distribution(ue_locations, vlc_locations, wifi_location, fov_deg=cfg.F_O_V, ceiling_height=3.0):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
@@ -76,9 +82,9 @@ class Plot():
                 #Plot.draw_vlc_ground_circle(ax, x, y, radius)
 
         # Set room boundaries
-        ax.set_xlim(0, 10)
-        ax.set_ylim(0, 10)
-        ax.set_zlim(0, 3)
+        ax.set_xlim(0, cfg.L)
+        ax.set_ylim(0, cfg.W)
+        ax.set_zlim(0, cfg.H)
 
         # Labeling
         ax.set_xlabel('X (m)')
@@ -355,22 +361,50 @@ class Plot():
         plt.tight_layout()
         plt.show()
 
-
-    def plot_total_data_rate(total_data_rate_of_each_ue: List[float]) -> None:
+    '''
+    def plot_total_data_rate(total_data_rate_of_each_ue: List[float], require_data_rate: List[float]) -> None:
         """
-        Draws a bar chart of total data rate for each UE.
+        Draws a bar chart of total/require data rate for each UE.
 
         Parameters:
             total_data_rate_of_each_ue: A list of total data rates (e.g., in Mbps) for each UE.
+            require_data_rate: A list of required data rates (e.g., in Mbps) for each UE.
         """
         ue_ids = list(range(len(total_data_rate_of_each_ue)))
 
         plt.figure(figsize=(12, 4))
         plt.bar(ue_ids, total_data_rate_of_each_ue, color='skyblue', edgecolor='black')
+        plt.bar(ue_ids, require_data_rate, color='orange', edgecolor='black')
         plt.xlabel('UE Index')
-        plt.ylabel('Total Data Rate (Mbps)')
-        plt.title('Total Data Rate of Each UE')
+        plt.ylabel('Data Rate (Mbps)')
+        plt.title('Total/Require Data Rate of Each UE')
         plt.xticks(ue_ids)
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        plt.show()
+    '''
+    def plot_total_data_rate(total_data_rate_of_each_ue: List[float], require_data_rate: List[float]) -> None:
+        """
+        Draws a grouped bar chart comparing total and required data rates for each UE.
+
+        Parameters:
+            total_data_rate_of_each_ue: A list of total data rates (e.g., in Mbps) for each UE.
+            require_data_rate: A list of required data rates (e.g., in Mbps) for each UE.
+        """
+        ue_ids = np.arange(len(total_data_rate_of_each_ue))
+        bar_width = 0.4
+
+        plt.figure(figsize=(12, 4))
+        plt.bar(ue_ids - bar_width / 2, total_data_rate_of_each_ue, width=bar_width,
+                color='skyblue', edgecolor='black', label='Total Data Rate')
+        plt.bar(ue_ids + bar_width / 2, require_data_rate, width=bar_width,
+                color='brown', edgecolor='black', label='Required Data Rate')
+
+        plt.xlabel('UE Index')
+        plt.ylabel('Data Rate (Mbps)')
+        plt.title('Total vs. Required Data Rate per UE')
+        plt.xticks(ue_ids)
+        plt.legend()
         plt.grid(axis='y', linestyle='--', alpha=0.7)
         plt.tight_layout()
         plt.show()

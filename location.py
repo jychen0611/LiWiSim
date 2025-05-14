@@ -1,24 +1,22 @@
+import config as cfg
 import math
 import random
 
-# Room size
-L = 10 # m
-W = 10 # m
-H = 3 # m
+
 
 class Location():
     def generate_ue_location():
-        x = random.uniform(0, L)  # x-coordinate in [0, 10)
-        y = random.uniform(0, W)  # y-coordinate in [0, 10)
+        x = random.uniform(0, cfg.L)  # x-coordinate in [0, 10)
+        y = random.uniform(0, cfg.W)  # y-coordinate in [0, 10)
         return (x, y, 0)
 
-    def generate_vlc_location():
+    def generate_vlc_location(N_vlc: int):
         vlc_location = []
-        for i in range(4):
-            for j in range(4):
-                x = 2*(i+1)
-                y = 2*(j+1)
-                z = H
+        for i in range((int)(math.sqrt(N_vlc))):
+            for j in range((int)(math.sqrt(N_vlc))):
+                x = (cfg.L/(math.sqrt(N_vlc)-1))*(i)
+                y = (cfg.W/(math.sqrt(N_vlc)-1))*(j)
+                z = cfg.H
                 vlc_location.append((x, y, z))
         return vlc_location
 

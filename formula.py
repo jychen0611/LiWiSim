@@ -1,17 +1,18 @@
+import config as cfg
 import math
 import numpy as np
 import random
 
 def dbm_to_watts(P_dbm):
-        """Convert power from dBm to Watts"""
-        return 10**((P_dbm - 30) / 10)  # Since 1 mW = 10^(-3) W
+    """Convert power from dBm to Watts"""
+    return 10**((P_dbm - 30) / 10)  # Since 1 mW = 10^(-3) W
 
 def generate_log_normal_shadowing(std_dev_db=10):
-        """
-        Generate log-normal shadowing in dB.
-        Xσ ~ N(0, std_dev_db^2)
-        """
-        return np.random.normal(loc=0.0, scale=std_dev_db)
+    """
+    Generate log-normal shadowing in dB.
+    Xσ ~ N(0, std_dev_db^2)
+    """
+    return np.random.normal(loc=0.0, scale=std_dev_db)
 
 def wifi_channel_to_frequency(channel, band='2.4GHz'):
     """
@@ -42,18 +43,18 @@ def wifi_channel_to_frequency(channel, band='2.4GHz'):
     return None
 
 def generate_rayleigh_hr(avg_power_dB=2.46):
-        """
-        Generate a Rayleigh fading gain h_r with a specified average power in dB.
-        """
-        P_linear = 10 ** (avg_power_dB / 10)
-        sigma = np.sqrt(P_linear / 2)
-        return np.random.rayleigh(scale=sigma)
+    """
+    Generate a Rayleigh fading gain h_r with a specified average power in dB.
+    """
+    P_linear = 10 ** (avg_power_dB / 10)
+    sigma = np.sqrt(P_linear / 2)
+    return np.random.rayleigh(scale=sigma)
 
 def large_scale_fading_loss(d):
-        f = wifi_channel_to_frequency(channel=random.randint(1, 14)) * 1e6
-        return 20 * math.log10(d*f) - 147.55 
+    f = wifi_channel_to_frequency(channel=random.randint(1, 14)) * 1e6
+    return 20 * math.log10(d*f) - 147.55 
 
-def get_ru_bandwidth_mhz(N_UE):
+def get_ru_bandwidth_mhz(N_wifi_ue):
     # Valid RU mappings for 20 MHz
     ru_table = {
         1: 20,        # full 20 MHz = 1 × 242-tone RU
@@ -67,14 +68,20 @@ def get_ru_bandwidth_mhz(N_UE):
         9: 2.22       # 9 × 26-tone RUs (~2.22 MHz each)
     }
 
-    if N_UE in ru_table:
-        return ru_table[N_UE]
+    if N_wifi_ue in ru_table:
+        return ru_table[N_wifi_ue]
     else:
-        raise ValueError(f"802.11ax 20 MHz channel does not support {N_UE} UEs with valid RU sizes.")
+        return 2.22
+        # raise ValueError(f"802.11ax 20 MHz channel does not support {N_wifi_ue} UEs with valid RU sizes.")
 
 class Formula():
 
-    def vlc_channel_gain(d, m=1.0000000000000002, A_pd=1, irradiant_angle=60, incident_angle=60, Fov=60, optical_filter_gain=1, optical_concentrator=3.0000000000000004):
+    def vlc_channel_gain(d:float, irradiant_angle:float, incident_angle:float, optical_concentrator:float):
+        m = 1.0000000000000002
+        A_pd = cfg.A_PD
+        Fov = cfg.F_O_V
+        optical_filter_gain = cfg.OPTICAL_FILTER_GAIN
+
         assert d != 0, "Distance (d) must not be zero to avoid division by zero."
         if incident_angle > Fov :
             return 0
@@ -82,23 +89,34 @@ class Formula():
         incident_angle_rad = math.radians(incident_angle)
         return ((m+1)*A_pd*(math.cos(irradiant_angle_rad) ** m)*math.cos(incident_angle_rad)*optical_concentrator*optical_filter_gain)/(2*math.pi*(d ** 2))
     
-    def lambertian_emission_order(semi_angle_at_helf_power):
+    def lambertian_emission_order():
+        semi_angle_at_helf_power = cfg.SEMI_ANGLE_AT_HELF_POWER
         if semi_angle_at_helf_power <= 0 or semi_angle_at_helf_power >= 90:
             raise ValueError("Semi-angle must be in the range (0, 90) degrees.")
         semi_angle_at_helf_power_rad = math.radians(semi_angle_at_helf_power)
         return -math.log(2)/math.log(math.cos(semi_angle_at_helf_power_rad))
 
-    def optical_concentrator(incident_angle, Fov=60):
+    def optical_concentrator(incident_angle:float):
+        Fov=cfg.F_O_V
         if incident_angle > Fov :
             return 0
         n = 1.5
         Fov_rad = math.radians(Fov)
         return (n**2)/(math.sin(Fov_rad)**2)
 
-    def vlc_sinr(H_vlc, shot, interference, oe_conversion=0.44, P_vlc=6.66, thermal=3.301237784295836e-10):
-        return ((oe_conversion*P_vlc*H_vlc)**2)/(shot+thermal+interference)
+    def vlc_sinr(H_vlc:float, shot:float, interference:float):
+        P_tx_vlc = cfg.P_TX_VLC # dBm
+        oe_conversion = cfg.R_OE
+        thermal = 3.301237784295836e-10
+        # PD light power range
+        P_v_min = cfg.P_VLC_MIN # W
+        P_v_max = cfg.P_VLC_MAX # W
+
+        P_rx_watts = (dbm_to_watts(P_tx_vlc) / 3) * H_vlc 
+        P_rx_watts_clamped = np.clip(P_rx_watts, P_v_min, P_v_max) 
+        return ((oe_conversion*P_rx_watts_clamped)**2)/(shot+thermal+interference)
     
-    def shot_noise(P_sig, P_ici):
+    def shot_noise(P_sig:float, P_ici:float):
         q = 1.6e-19
         Re = 0.54
         B = 10 
@@ -119,27 +137,29 @@ class Formula():
         gm = 3e-3       
         return ((8*math.pi*k*Tk)/G)*fix_capacitance_pd*A*I_2*(B**2) + ((16*(math.pi**2)*k*Tk*fet_factor)/gm)*(fix_capacitance_pd**2)*(A**2)*I_3*(B**3)
 
-    def vlc_data_rate(sinr, B_vlc=20/3):
+    def vlc_data_rate(sinr:float):
+        B_vlc = cfg.B_VLC / 3 # R / G / B band
         return B_vlc * math.log2(1+sinr)
     
-    def wifi_channel_gain(d):
+    def wifi_channel_gain(d:float):
         h_r = generate_rayleigh_hr()
         L_d = large_scale_fading_loss(d=d)
         return (h_r**2) * (10 ** ((-L_d+generate_log_normal_shadowing()) / 10))  # Rayleigh power * path loss
     
-    def wifi_snr(H_wifi, N_ue):
-        P_tx_wifi = 20 # dbm
-        N_wifi = -174 # dBm
-        B_wifi = 20e6 # Hz
-        P_rx_min = -125 # dBm
-        P_rx_max = 50 # dBm
-        P_rx_watts = (dbm_to_watts(P_tx_wifi) / N_ue) * H_wifi
+    def wifi_snr(H_wifi:float, N_wifi_ue:int):
+        P_tx_wifi = cfg.P_TX_WIFI # dbm
+        N_wifi = cfg.WIFI_NOISE # dBm
+        B_wifi = cfg.B_WIFI * 1e6 # Hz
+        P_rx_min = cfg.P_WIFI_MIN # dBm
+        P_rx_max = cfg.P_WIFI_MAX # dBm
+
+        P_rx_watts = (dbm_to_watts(P_tx_wifi) / N_wifi_ue) * H_wifi
         P_rx_dbm = 10 * np.log10(P_rx_watts) + 30
         P_rx_dbm = np.clip(P_rx_dbm, P_rx_min, P_rx_max)
         P_rx_watts_clamped = dbm_to_watts(P_rx_dbm)
         return P_rx_watts_clamped / (dbm_to_watts(N_wifi)*B_wifi)
     
-    def wifi_data_rate(snr, N_ue):
-        B_wifi = get_ru_bandwidth_mhz(N_UE=N_ue)
+    def wifi_data_rate(snr:float, N_wifi_ue:int):
+        B_wifi = get_ru_bandwidth_mhz(N_wifi_ue=N_wifi_ue)
         return B_wifi * math.log2(1+snr)
     
