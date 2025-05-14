@@ -1,10 +1,15 @@
+import config as cfg
 from typing import List, Set, Tuple
 from formula import Formula as f
 from location import Location as l
 from plot import Plot as p
 
+def dbm_to_watts(P_dbm):
+    """Convert power from dBm to Watts"""
+    return 10**((P_dbm - 30) / 10)  # Since 1 mW = 10^(-3) W
+
 class Algorithm():
-    def VASIA(N_ue:int, K:List[Set[int]], H:List[Set[int]], r:List[int], distance:List[List[float]], angle:List[List[float]], optical_concentrator:List[List[float]]) -> Tuple[List[List[int]], List[List[float]]]:
+    def VASIA(N_ue:int, K:List[Set[int]], H:List[Set[int]], r:List[float], distance:List[List[float]], angle:List[List[float]], optical_concentrator:List[List[float]], FoV:float) -> Tuple[List[List[int]], List[List[float]]]:
 
         N_ap = 16
         # positive influence
@@ -20,16 +25,17 @@ class Algorithm():
         for i in range(N_ue):
             for j in K[i]:
                 # Calculate q_ij by equation (9)
-                H_vlc = f.vlc_channel_gain(d = distance[i][j], irradiant_angle=angle[i][j], incident_angle=angle[i][j], optical_concentrator=optical_concentrator[i][j])
+                H_vlc = f.vlc_channel_gain(d = distance[i][j], irradiant_angle=angle[i][j], incident_angle=angle[i][j], optical_concentrator=optical_concentrator[i][j], FoV=FoV)
                 interference = 0
                 P_ici = 0
+                P_tx_watts = cfg.P_TX_VLC_R
                 for k in K[i]:
                     if k==j:
                         continue 
-                    P_ici += 0.44*6.66*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k])
-                    interference += (0.44*6.66*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k])) ** 2 
-                shot = f.shot_noise(P_sig=0.44*6.66*H_vlc, P_ici=P_ici)
-                sinr = f.vlc_sinr(H_vlc=H_vlc, shot=shot, interference=interference)
+                    P_ici += 0.44*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)
+                    interference += (0.44*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)) ** 2 
+                shot = f.shot_noise(P_sig=0.44*P_tx_watts*H_vlc, P_ici=P_ici)
+                sinr = f.vlc_sinr(H_vlc=H_vlc, shot=shot, interference=interference, band=0)
                 q[i][j] = f.vlc_data_rate(sinr=sinr)
 
         for i in range(N_ue):
@@ -91,7 +97,7 @@ class Algorithm():
         # p.plot_vlc_data_rate_matrix(q)
         return vlc_ap_selection_order, alpha
 
-    def UPARU(N_ue:int, K:List[Set[int]], H:List[Set[int]], r:List[int], q:List[List[float]]):
+    def UPARU(N_ue:int, K:List[Set[int]], H:List[Set[int]], r:List[float], q:List[List[float]]):
         # Initialize the priority factor of each UE to zero;
         priority = [0 for _ in range(N_ue)]
         tmp = []
@@ -100,7 +106,10 @@ class Algorithm():
             q_i = 0
             for j in K[i]:
                 q_i = max(q_i, q[i][j])
-            
+            if q_i == 0:
+                print("err: q_i is zero!")
+                continue
+
             # Generate primary UE set Y_i by equation (18);
             Y_i = set()
             for j in K[i]:
@@ -129,7 +138,7 @@ class Algorithm():
         ue_order = [ue_idx for ue_idx, priority in sorted(tmp, key=lambda x: x[1], reverse=True)]
         return ue_order
 
-    def MCRAIC(N_ue:int, N_vlc:int, U:List[int], K:List[Set[int]], H:List[Set[int]], alpha:List[List[float]]):
+    def MCRAIC(N_ue:int, N_vlc:int, U:List[int], K:List[Set[int]], H:List[Set[int]], alpha:List[List[float]], required_data_rate:List[float], vlc_data_rate:List[List[List[float]]]):
         # Initialize E_i = ∅, G = ∅, A_j = ∅, D_i = ∅, Q_i = ∅, M_3×N_vlc = {0}, X_N_u×N_vlc = {0};
         E = [set() for i in range(N_ue)]
         G = []
@@ -138,9 +147,12 @@ class Algorithm():
         Q = [set() for i in range(N_ue)]
         M = [[0 for _ in range(3)] for j in range(N_vlc)]
         X = [[0 for j in range(N_vlc)] for i in range(N_ue)]
+        # Record the UE who connected to wifi
         wifi = []
         # The remaining band of each VLC AP
         C = [{0, 1, 2} for j in range(N_vlc)]
+        # Make a copy of required data rate
+        r = list(required_data_rate)
         # Sort UEs ∈ U by θi in decreasing order;
         # U is pre-sorted UE set! 
         for i in U:
@@ -167,6 +179,7 @@ class Algorithm():
                 # UE-i is connected to the WiFi AP;
                 E[i].add(7)
                 wifi.append(i)
+                continue
             # end if
             for j in D[i]:
                 avg = 0
@@ -182,25 +195,27 @@ class Algorithm():
             # Sort APs ∈ D i by αij in increasing order;
             D_i = sorted(D[i], key=lambda j: alpha[i][j])
             for j in D_i:
-                satisfied = False
-                # if C_j != ∅ and UE-i is NOT satisfied then <Todo> check UE satisfication
-                if C[j] and (not satisfied): 
+                # if C_j != ∅ and UE-i is NOT satisfied then 
+                if C[j] and (r[i]>0): 
                     # assign an available band to UE-i;
                     band = C[j].pop()
                     E[i].add(band)
                     # update the situation of band allocation;
                     M[j][band] = i
+                    # Update the require data rate
+                    r[i] -= vlc_data_rate[band][i][j]
                 # end if
                 if j in Q[i]:
                     # repeat the steps from 20 to 23;
-                    satisfied = False
-                    # if C_j != ∅ and UE-i is NOT satisfied then <Todo> check UE satisfication
-                    if C[j] and (not satisfied): 
+                    # if C_j != ∅ and UE-i is NOT satisfied then
+                    if C[j] and (r[i]>0): 
                         # assign an available band to UE-i;
                         band = C[j].pop()
                         E[i].add(band)
                         # update the situation of band allocation;
                         M[j][band] = i
+                        # Update the require data rate
+                        r[i] -= vlc_data_rate[band][i][j]
                     # end if
                 # end if
             # end for
@@ -208,18 +223,25 @@ class Algorithm():
                 # UE-i is connected to the WiFi AP;
                 E[i].add(7)
                 wifi.append(i)
+                continue
             # end if
         # end for
-        print("VLC\n", M)
-        print("wifi\n", wifi)
-        print("E\n", E)
-        print("C\n", C)
-        # Sort UEs ∈ U by x_i in decreasing order;
-        # for each UE − i ∈ U do
-            # for each VLC AP−j ∈ Q i do
+        # print("VLC\n", M)
+        # print("wifi\n", wifi)
+        # print("E\n", E)
+        # print("C\n", C)
+        # <Todo> Sort UEs ∈ U by x_i in decreasing order;
+        for i in U:
+            for j in Q[i]:
                 # if x ij > x i and C j =∅ then
+                while C[j]:
                     # assign a remaining band to UE-i;
+                    band = C[j].pop()
+                    E[i].add(band)
                     # update the situation of band allocation;
+                    M[j][band] = i
+                    # Update the require data rate
+                    r[i] -= vlc_data_rate[band][i][j]
                 # end if
             # end for
         # end for
