@@ -71,12 +71,13 @@ def get_ru_bandwidth_mhz(N_wifi_ue):
     if N_wifi_ue in ru_table:
         return ru_table[N_wifi_ue]
     else:
-        return 2.22
+        return 20/N_wifi_ue
         # raise ValueError(f"802.11ax 20 MHz channel does not support {N_wifi_ue} UEs with valid RU sizes.")
 
 class Formula():
 
     def vlc_channel_gain(d:float, irradiant_angle:float, incident_angle:float, optical_concentrator:float, FoV:float):
+        # m is lambertian emission order
         m = 1.0000000000000002
         A_pd = cfg.A_PD
         optical_filter_gain = cfg.OPTICAL_FILTER_GAIN
@@ -156,7 +157,10 @@ class Formula():
         P_rx_min = cfg.P_WIFI_MIN # dBm
         P_rx_max = cfg.P_WIFI_MAX # dBm
 
-        P_rx_watts = (dbm_to_watts(P_tx_wifi) / N_wifi_ue) * H_wifi
+        if N_wifi_ue != 0:
+            P_rx_watts = (dbm_to_watts(P_tx_wifi) / N_wifi_ue) * H_wifi
+        else:
+            P_rx_watts = dbm_to_watts(P_tx_wifi) * H_wifi
         P_rx_dbm = 10 * np.log10(P_rx_watts) + 30
         P_rx_dbm = np.clip(P_rx_dbm, P_rx_min, P_rx_max)
         P_rx_watts_clamped = dbm_to_watts(P_rx_dbm)

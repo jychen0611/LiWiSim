@@ -144,14 +144,13 @@ def simulation(N_UE, FoV):
 
     total_data_rate_of_each_ue = [0 for i in range(N_UE)]
     # Calculate total data rate obtained from VLC AP
-    
     j = 0
-    sum_rate = 0
+    STP = 0
     for m in M:
         total_data_rate_of_each_ue[m[0]] += vlc_data_rate_R[m[0]][j]
         total_data_rate_of_each_ue[m[1]] += vlc_data_rate_G[m[1]][j]
         total_data_rate_of_each_ue[m[2]] += vlc_data_rate_B[m[2]][j]
-        sum_rate += (vlc_data_rate_R[m[0]][j] + vlc_data_rate_G[m[1]][j] + vlc_data_rate_B[m[0]][j])
+        STP += (vlc_data_rate_R[m[0]][j] + vlc_data_rate_G[m[1]][j] + vlc_data_rate_B[m[0]][j])
         j += 1
     
 
@@ -166,35 +165,82 @@ def simulation(N_UE, FoV):
     # Calculate data rate obtained from WiFi 
     for w in wifi:
         total_data_rate_of_each_ue[w] += wifi_data_rate[w]
-        sum_rate += wifi_data_rate[w]
+        STP += wifi_data_rate[w]
     
+    # Caculate average user satisfaction (AUS)
+    AUS = 0
+    for i in range(N_UE):
+        if total_data_rate_of_each_ue[i]/require_data_rate[i] > 1:
+            AUS += 1
+        else:
+            AUS += total_data_rate_of_each_ue[i]/require_data_rate[i]
+    AUS /= N_UE
 
+    # Caculate Service Fairness Index (SFI)
+    SFI = 0
+    upper = 0
+    lower = 0
+    for i in range(N_UE):
+        upper += total_data_rate_of_each_ue[i]
+        lower += (total_data_rate_of_each_ue[i] ** 2)
+    if lower != 0:
+        SFI = (upper ** 2) / (N_UE * lower)    
+    else:
+        SFI = 0.5
     # p.plot_total_data_rate(total_data_rate_of_each_ue=total_data_rate_of_each_ue, require_data_rate=require_data_rate)
-    print("Sum rate: ", sum_rate)
-    return sum_rate
+    print("System Throughput: ", STP)
+    return STP, AUS, SFI
 
 
 
 if __name__ == "__main__":
     print("Simulation Start!")
-
-    # FoV v.s. System Throughput
-    avg_sum_rate = []
+    
+    
+    # FoV 
+    FoV_avg_STP = []
+    FoV_avg_AUS = []
+    FoV_avg_SFI = []
     for i in range(30, 91, 5):  # FoV from 30 to 90 with step size 5
         sum_rate = 0
-        for j in range(100):
-            sum_rate += simulation(N_UE=cfg.N_UE, FoV=i)
-        avg_sum_rate.append(sum_rate/100) 
-    p.plot_fov_vs_throughput(avg_sum_rate)
-
-    # N_UE v.s. System Throughput
-    avg_sum_rate = []
+        satisfaction = 0
+        fairness = 0
+        for j in range(cfg.TIMES):
+            [STP, AUS, SFI] = simulation(N_UE=cfg.N_UE, FoV=i)
+            sum_rate += STP
+            satisfaction += AUS
+            fairness += SFI
+        FoV_avg_STP.append(sum_rate/cfg.TIMES) 
+        FoV_avg_AUS.append(satisfaction/cfg.TIMES) 
+        FoV_avg_SFI.append(fairness/cfg.TIMES) 
+   
+    # N_UE 
+    N_UE_avg_STP = []
+    N_UE_avg_AUS = []
+    N_UE_avg_SFI = []
     for i in range(1, 25, 1):  # N_UE from 1 to 25 with step size 1
         sum_rate = 0
-        for j in range(100):
-            sum_rate += simulation(N_UE=i, FoV=cfg.F_O_V)
-        avg_sum_rate.append(sum_rate/100) 
-    p.plot_nue_vs_throughput(avg_sum_rate)
+        satisfaction = 0
+        fairness = 0
+        for j in range(cfg.TIMES):
+            [STP, AUS, SFI] = simulation(N_UE=i, FoV=cfg.F_O_V)
+            sum_rate += STP
+            satisfaction += AUS
+            fairness += SFI
+        N_UE_avg_STP.append(sum_rate/cfg.TIMES) 
+        N_UE_avg_AUS.append(satisfaction/cfg.TIMES) 
+        N_UE_avg_SFI.append(fairness/cfg.TIMES)
+
+    p.plot_fov_vs_STP(FoV_avg_STP)
+    p.plot_nue_vs_STP(N_UE_avg_STP)
+
+    p.plot_fov_vs_AUS(FoV_avg_AUS)
+    p.plot_nue_vs_AUS(N_UE_avg_AUS)
+    
+    p.plot_fov_vs_SFI(FoV_avg_SFI)
+    p.plot_nue_vs_SFI(N_UE_avg_SFI)
+
+    
 
     '''
     # wifi test

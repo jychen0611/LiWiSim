@@ -45,3 +45,6 @@ N_WIFI = 1
 N_UE = 25
 # Default field of view angle of PD
 F_O_V = 60 # degree
+
+# Experiment times
+TIMES = 10
