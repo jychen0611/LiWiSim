@@ -44,7 +44,10 @@ N_WIFI = 1
 # Default number of UEs
 N_UE = 25
 # Default field of view angle of PD
-F_O_V = 60 # degree
+F_O_V = 50 # degree
 
 # Experiment times
-TIMES = 10
+TIMES = 20
+
+# Episode
+EPISODE = 700
