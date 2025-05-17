@@ -167,6 +167,8 @@ class Formula():
         return P_rx_watts_clamped / (dbm_to_watts(N_wifi)*B_wifi)
     
     def wifi_data_rate(snr:float, N_wifi_ue:int):
+        if N_wifi_ue == 0:
+            return 0
         B_wifi = get_ru_bandwidth_mhz(N_wifi_ue=N_wifi_ue)
         return B_wifi * math.log2(1+snr)
     
