@@ -498,3 +498,49 @@ class Plot():
         # Save figure to file
         plt.savefig('diagram/nue_vs_sfi.png', dpi=300, bbox_inches='tight')
         plt.show()
+
+    def plot_time_vs_STP(avg_STP:List[float]):
+        time_range = list(range(0, cfg.EPISODE, 1))
+        # Plotting
+        plt.figure()
+        plt.plot(time_range, avg_STP, marker='o')
+        plt.title('Time vs. System Throughput')
+        plt.xlabel('Time (s)')
+        plt.ylabel('System Throughput (Mbps)')
+        plt.grid(True)
+        # Set y-axis limits (adjust the values as needed)
+        # plt.ylim(bottom=0)  
+        # Save figure to file
+        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.show()
+
+    def plot_time_vs_AUS(avg_AUS:List[float]):
+        time_range = list(range(0, cfg.EPISODE, 1))
+        # Plotting
+        plt.figure()
+        plt.plot(time_range, avg_AUS, marker='o')
+        plt.title('Time vs. AUS')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Average User Satisfaction')
+        plt.grid(True)
+        # Set y-axis limits (adjust the values as needed)
+        # plt.ylim(bottom=0)  
+        # Save figure to file
+        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.show()
+
+    def plot_time_vs_SFI(avg_SFI:List[float]):
+        time_range = list(range(0, cfg.EPISODE, 1))
+        # Plotting
+        plt.figure()
+        plt.plot(time_range, avg_SFI, marker='o')
+        plt.title('Time vs. SFI')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Service Fairness Index')
+        plt.grid(True)
+        # Set y-axis limits (adjust the values as needed)
+        # plt.ylim(bottom=0)  
+        # Save figure to file
+        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.show()
+    

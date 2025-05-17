@@ -1,6 +1,7 @@
 import config as cfg
 import math
 import random
+import numpy as np
 
 
 
@@ -10,7 +11,36 @@ class Location():
         y = random.uniform(0, cfg.W)  # y-coordinate in [0, 10)
         return (x, y, cfg.H_PD)
 
+    def move_ue_positions(ue_positions, step_size=0.001, room_bounds=(cfg.L, cfg.W)):
+        """
+        Simulate UE mobility by slightly modifying x, y coordinates.
+        
+        Parameters:
+            ue_positions: List of current UE positions, shape (N_UE, 3)
+                        Each element is [x, y, z]
+            step_size: Max random step size for x and y (default: 0.1 meters)
+            room_bounds: Tuple (x_max, y_max), the bounds of the room (in meters)
+            
+        Returns:
+            Updated list of UE positions with same z, modified x, y
+        """
+        new_positions = []
+        x_max, y_max = room_bounds
+
+        for pos in ue_positions:
+            x, y, z = pos
+            dx = np.random.uniform(-step_size, step_size)
+            dy = np.random.uniform(-step_size, step_size)
+            new_x = np.clip(x + dx, 0, x_max)
+            new_y = np.clip(y + dy, 0, y_max)
+            new_positions.append([new_x, new_y, z])
+        
+        return new_positions
+
+
     def generate_vlc_location(N_vlc: int):
+        if N_vlc == 1:
+            return [(cfg.L/2, cfg.W/2, cfg.H)]
         vlc_location = []
         for i in range((int)(math.sqrt(N_vlc))):
             for j in range((int)(math.sqrt(N_vlc))):
