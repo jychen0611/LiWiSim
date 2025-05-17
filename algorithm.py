@@ -232,9 +232,9 @@ class Algorithm():
         # print("C\n", C)
         # <Todo> Sort UEs ∈ U by x_i in decreasing order;
         for i in U:
-            for j in Q[i]:
+            for j in D[i]:
                 # if x ij > x i and C j =∅ then
-                while C[j]:
+                if C[j]:
                     # assign a remaining band to UE-i;
                     band = C[j].pop()
                     E[i].add(band)
