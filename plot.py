@@ -465,6 +465,7 @@ class Plot():
         plt.grid(True)
         # Set y-axis limits (adjust the values as needed)
         plt.ylim(bottom=0)  
+        plt.legend()
         # Save figure to file
         plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
         plt.show()
@@ -482,6 +483,7 @@ class Plot():
         # Set y-axis limits (adjust the values as needed)
         # plt.ylim(0.3, 1)  
         plt.ylim(bottom=0)  
+        plt.legend()
         # Save figure to file
         plt.savefig('diagram/nue_vs_aus.png', dpi=300, bbox_inches='tight')
         plt.show()
@@ -495,10 +497,11 @@ class Plot():
         plt.title('N_UE vs. SFI')
         plt.xlabel('Number of UEs')
         plt.ylabel('Service Fairness Index')
-        plt.grid(True)
         # Set y-axis limits (adjust the values as needed)
         # plt.ylim(0.6, 1)  
         plt.ylim(bottom=0)  
+        plt.grid(True)
+        plt.legend()
         # Save figure to file
         plt.savefig('diagram/nue_vs_sfi.png', dpi=300, bbox_inches='tight')
         plt.show()
