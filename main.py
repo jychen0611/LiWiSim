@@ -101,8 +101,8 @@ def N_UE_Experiments():
     
     # Plot results
     p.plot_nue_vs_STP(MARL_N_UE_avg_STP, MCRAIC_N_UE_avg_STP)
-    p.plot_nue_vs_AUS(MARL_N_UE_avg_AUS, MCRAIC_N_UE_avg_STP)
-    p.plot_nue_vs_SFI(MARL_N_UE_avg_SFI, MCRAIC_N_UE_avg_STP)
+    p.plot_nue_vs_AUS(MARL_N_UE_avg_AUS, MCRAIC_N_UE_avg_AUS)
+    p.plot_nue_vs_SFI(MARL_N_UE_avg_SFI, MCRAIC_N_UE_avg_SFI)
 
 if __name__ == "__main__":
     print("Simulation Start!")
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     # Experiments with FoV angle                                           #
     ########################################################################
 
-    FoV_Experiments()
+    # FoV_Experiments()
     
     ########################################################################
     # Experiments with N_UE                                                #
