@@ -451,11 +451,12 @@ class Plot():
         plt.savefig('diagram/fov_vs_sfi.png', dpi=300, bbox_inches='tight')
         plt.show()
 
-    def plot_nue_vs_STP(avg_STP:List[float]):
+    def plot_nue_vs_STP(avg_STP1: List[float], avg_STP2: List[float]):
         nue_range = list(range(1, 25, 1))
         # Plotting
         plt.figure()
-        plt.plot(nue_range, avg_STP, marker='o')
+        plt.plot(nue_range, avg_STP1, marker='o', label='MARL', color='red')
+        plt.plot(nue_range, avg_STP2, marker='s', label='MCRAIC', color='blue')
         plt.title('N_UE vs. System Throughput')
         plt.xlabel('Number of UEs')
         plt.ylabel('System Throughput (Mbps)')
@@ -466,11 +467,12 @@ class Plot():
         plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
         plt.show()
     
-    def plot_nue_vs_AUS(avg_AUS:List[float]):
+    def plot_nue_vs_AUS(avg_AUS1: List[float], avg_AUS2: List[float]):
         nue_range = list(range(1, 25, 1))
         # Plotting
         plt.figure()
-        plt.plot(nue_range, avg_AUS, marker='o')
+        plt.plot(nue_range, avg_AUS1, marker='o', label='MARL', color='red')
+        plt.plot(nue_range, avg_AUS2, marker='s', label='MCRAIC', color='blue')
         plt.title('N_UE vs. AUS')
         plt.xlabel('Number of UEs')
         plt.ylabel('Average User Satisfaction')
@@ -481,11 +483,12 @@ class Plot():
         plt.savefig('diagram/nue_vs_aus.png', dpi=300, bbox_inches='tight')
         plt.show()
 
-    def plot_nue_vs_SFI(avg_SFI:List[float]):
+    def plot_nue_vs_SFI(avg_SFI1: List[float], avg_SFI2: List[float]):
         nue_range = list(range(1, 25, 1))
         # Plotting
         plt.figure()
-        plt.plot(nue_range, avg_SFI, marker='o')
+        plt.plot(nue_range, avg_SFI1, marker='o', label='MARL', color='red')
+        plt.plot(nue_range, avg_SFI2, marker='s', label='MCRAIC', color='blue')
         plt.title('N_UE vs. SFI')
         plt.xlabel('Number of UEs')
         plt.ylabel('Service Fairness Index')

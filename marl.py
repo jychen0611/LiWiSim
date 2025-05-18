@@ -21,11 +21,9 @@ import random
 from collections import deque
 
 # Constants
-N_UES = cfg.N_UE
 N_VLC = cfg.N_VLC
-STATE_DIM = 3  # [required_rate, distance_to_nearest_VLC, N_UEs_in_VLC]
+STATE_DIM = 3  # [required_rate, distance_to_nearest_VLC, N_UE_in_nearest_VLC_coverage]
 ACTION_DIM = 2  # 0: WiFi, 1: LiFi
-FoV = cfg.F_O_V
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -62,6 +60,9 @@ class ReplayBuffer:
 
 # Environment
 class HybridSelectionEnv:
+    def __init__(self, N_UE):
+        self.n_ue = N_UE
+    '''
     def reset(self):
         self.ue_positions = np.random.rand(N_UES, 3) * np.array([10.0, 10.0, 3.0])
         self.vlc_positions = np.array([[2, 2, 3], [2, 8, 3], [8, 2, 3], [8, 8, 3]])
@@ -75,18 +76,18 @@ class HybridSelectionEnv:
         vlc_user_counts = np.bincount(nearest_ap, minlength=len(self.vlc_positions))
         ue_counts = np.array([vlc_user_counts[i] for i in nearest_ap])
         return np.stack([self.required_rates, nearest_dist, ue_counts], axis=1)
-
+    '''
     def step(self, actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate):
         wifi = []
         lifi = []
-        for i in range(N_UES):
+        for i in range(self.n_ue):
             if actions[i] == 1:
                 lifi.append(i)
             else:
                 wifi.append(i)
 
         STP = 0
-        total_data_rate_of_each_ue = [0 for i in range(N_UES)]
+        total_data_rate_of_each_ue = [0 for i in range(self.n_ue)]
 
         # The remaining band of each VLC AP
         C = [{0, 1, 2} for j in range(N_VLC)]
@@ -175,22 +176,22 @@ class HybridSelectionEnv:
 
         # Caculate average user satisfaction (AUS)
         AUS = 0
-        for i in range(N_UES):
+        for i in range(self.n_ue):
             if total_data_rate_of_each_ue[i]/require_data_rate[i] > 1:
                 AUS += 1
             else:
                 AUS += total_data_rate_of_each_ue[i]/require_data_rate[i]
-        AUS /= N_UES
+        AUS /= self.n_ue
 
         # Caculate Service Fairness Index (SFI)
         SFI = 0
         upper = 0
         lower = 0
-        for i in range(N_UES):
+        for i in range(self.n_ue):
             upper += total_data_rate_of_each_ue[i]
             lower += (total_data_rate_of_each_ue[i] ** 2)
         if lower != 0:
-            SFI = (upper ** 2) / (N_UES * lower)    
+            SFI = (upper ** 2) / (self.n_ue * lower)    
         else:
             SFI = 0.5
 
@@ -198,12 +199,13 @@ class HybridSelectionEnv:
 
 # MARL Agent
 class MultiUEAgent:
-    def __init__(self):
+    def __init__(self, N_UE):
+        self.n_ue = N_UE
         self.policy_net = DQN(STATE_DIM, ACTION_DIM).to(device)
         self.target_net = DQN(STATE_DIM, ACTION_DIM).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.optim = optim.Adam(self.policy_net.parameters(), lr=1e-3)
-        self.buffers = [ReplayBuffer(10000) for _ in range(N_UES)]
+        self.buffers = [ReplayBuffer(10000) for _ in range(self.n_ue)]
         self.criteria = nn.MSELoss()
         self.gamma = 0.95
         self.epsilon = 1.0
@@ -212,7 +214,7 @@ class MultiUEAgent:
 
     def select_actions(self, states):
         actions = []
-        for i in range(N_UES):
+        for i in range(self.n_ue):
             state_tensor = torch.FloatTensor(states[i]).unsqueeze(0).to(device)
             q_values = self.policy_net(state_tensor)
             if np.random.rand() < self.epsilon:
@@ -223,7 +225,7 @@ class MultiUEAgent:
         return np.array(actions)
 
     def learn(self, batch_size=64):
-        for i in range(N_UES):
+        for i in range(self.n_ue):
             buffer = self.buffers[i]
             if len(buffer) < batch_size:
                 continue
@@ -245,21 +247,21 @@ class MultiUEAgent:
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
-def MARL_EXE(N_UES, FoV):
+def MARL_EXE(N_UE, FoV):
     # Training Loop
-    env = HybridSelectionEnv()
-    agent = MultiUEAgent()
+    env = HybridSelectionEnv(N_UE)
+    agent = MultiUEAgent(N_UE)
 
     # Environment #######################################################
     # Uniformly generate the location of each VLC AP/UE
-    ue_locations = [l.generate_ue_location() for _ in range(N_UES)]
+    ue_locations = [l.generate_ue_location() for _ in range(N_UE)]
     vlc_locations = l.generate_vlc_location(cfg.N_VLC)
     # Define location of WiFi AP
     wifi_location = (cfg.L/2, cfg.W/2, cfg.H)
 
     # Generate the required data rate (Mbps) of each UE
     rate_options = {10, 20, 40, 60, 80, 100}
-    require_data_rate = [random.choice(list(rate_options)) for i in range(N_UES)]
+    require_data_rate = [random.choice(list(rate_options)) for i in range(N_UE)]
 
 
     STP_list = []
@@ -276,19 +278,19 @@ def MARL_EXE(N_UES, FoV):
         # ue_locations = [l.generate_ue_location() for _ in range(N_UES)]
         ue_locations = l.move_ue_positions(ue_locations)
         # Calculate the geometric distance of each AP/UE pair
-        distance = [[l.geometric_distance(ue_locations[i], vlc_locations[j]) for j in range(cfg.N_VLC)] for i in range(N_UES)]
+        distance = [[l.geometric_distance(ue_locations[i], vlc_locations[j]) for j in range(cfg.N_VLC)] for i in range(N_UE)]
 
         # Visualize LiWi Network 
         # p.plot_network_distribution(ue_locations, vlc_locations, wifi_location)
         # p.plot_network_distribution_with_labels(ue_locations, vlc_locations, wifi_location)
         # Calculate the angle between each VLC AP/UE
-        angle = [[l.calculate_angles(ue_locations[i], vlc_locations[j])[0] for j in range(cfg.N_VLC)] for i in range(N_UES)]
+        angle = [[l.calculate_angles(ue_locations[i], vlc_locations[j])[0] for j in range(cfg.N_VLC)] for i in range(N_UE)]
         # Calculate optical concenteator
-        optical_concentrator = [[f.optical_concentrator(incident_angle=angle[i][j], FoV=FoV) for j in range(cfg.N_VLC)] for i in range(N_UES)]
+        optical_concentrator = [[f.optical_concentrator(incident_angle=angle[i][j], FoV=FoV) for j in range(cfg.N_VLC)] for i in range(N_UE)]
 
         # Generate the available VLC AP set of each UE
         K = []
-        for i in range(N_UES):
+        for i in range(N_UE):
             Ki = set()
             for j in range(cfg.N_VLC):
                 if angle[i][j]<FoV:
@@ -299,7 +301,7 @@ def MARL_EXE(N_UES, FoV):
         H = []
         for j in range(cfg.N_VLC):
             Hj = set()
-            for i in range(N_UES):
+            for i in range(N_UE):
                 if angle[i][j]<FoV:
                     Hj.add(i)
             H.append(Hj)
@@ -308,15 +310,15 @@ def MARL_EXE(N_UES, FoV):
         remain_data_rate = require_data_rate.copy()
 
         # Calculate VLC data rate based on R-band / G-band / B-band
-        vlc_channel_gain = [[0 for j in range(cfg.N_VLC)] for i in range(N_UES)]
-        vlc_sinr_R = [[0 for j in range(cfg.N_VLC)] for i in range(N_UES)]
-        vlc_data_rate_R = [[0 for j in range(cfg.N_VLC)] for i in range(N_UES)]
-        vlc_sinr_G = [[0 for j in range(cfg.N_VLC)] for i in range(N_UES)]
-        vlc_data_rate_G = [[0 for j in range(cfg.N_VLC)] for i in range(N_UES)]
-        vlc_sinr_B = [[0 for j in range(cfg.N_VLC)] for i in range(N_UES)]
-        vlc_data_rate_B = [[0 for j in range(cfg.N_VLC)] for i in range(N_UES)]
+        vlc_channel_gain = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+        vlc_sinr_R = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+        vlc_data_rate_R = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+        vlc_sinr_G = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+        vlc_data_rate_G = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+        vlc_sinr_B = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
+        vlc_data_rate_B = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
         # For each UE
-        for i in range(N_UES):
+        for i in range(N_UE):
             # For each available AP of UE_i
             for j in K[i]:
                 # Calculate channel gain
@@ -377,16 +379,16 @@ def MARL_EXE(N_UES, FoV):
         
         vlc_data_rate = [vlc_data_rate_R, vlc_data_rate_G, vlc_data_rate_B]
         #####################################################################
-        wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(N_UES)]
+        wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(N_UE)]
         # p.plot_wifi_channel_gain_vector(wifi_channel_gain)
-        wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=len(wifi)) for i in range(N_UES)]
+        wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=len(wifi)) for i in range(N_UE)]
         # p.plot_wifi_snr_vector(wifi_snr)
-        wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_wifi_ue=len(wifi)) for i in range(N_UES)]
+        wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_wifi_ue=len(wifi)) for i in range(N_UE)]
         #p.plot_wifi_data_rate_vector(wifi_data_rate)
         #####################################################################
         state = []
         ap_idx_list = []
-        for i in range(N_UES):
+        for i in range(N_UE):
             d = 100
             ap_idx = -1
             for j in K[i]:
@@ -404,7 +406,7 @@ def MARL_EXE(N_UES, FoV):
             actions = agent.select_actions(state)
             next_state, STP, AUS, SFI, done = env.step(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
             reward = STP
-            for i in range(N_UES):
+            for i in range(N_UE):
                 agent.buffers[i].push(state[i], actions[i], reward, next_state[i])
             agent.learn()
             state = next_state
