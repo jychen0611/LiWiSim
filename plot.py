@@ -409,51 +409,48 @@ class Plot():
         plt.tight_layout()
         plt.show()
 
-    def plot_fov_vs_STP(avg_STP:List[float]):
+    def plot_fov_vs_STP(avg_STP1: List[float], avg_STP2: List[float]):
         fov_range = list(range(30, 91, 5))
-        # Plotting
         plt.figure()
-        plt.plot(fov_range, avg_STP, marker='o')
+        plt.plot(fov_range, avg_STP1, marker='o', label='MARL', color='red')
+        plt.plot(fov_range, avg_STP2, marker='s', label='MCRAIC', color='blue')
         plt.title('FoV vs. System Throughput')
         plt.xlabel('Field of View (degrees)')
         plt.ylabel('System Throughput (Mbps)')
+        plt.ylim(bottom=0)
         plt.grid(True)
-        # Set y-axis limits (adjust the values as needed)
-        plt.ylim(bottom=0) 
-        # Save figure to file
-        plt.savefig('diagram/fov_vs_stp.png', dpi=300, bbox_inches='tight') 
+        plt.legend()
+        plt.savefig('diagram/fov_vs_stp.png', dpi=300, bbox_inches='tight')
         plt.show()
 
-    def plot_fov_vs_AUS(avg_AUS:List[float]):
+    def plot_fov_vs_AUS(avg_AUS1: List[float], avg_AUS2: List[float]):
         fov_range = list(range(30, 91, 5))
-        # Plotting
         plt.figure()
-        plt.plot(fov_range, avg_AUS, marker='o')
+        plt.plot(fov_range, avg_AUS1, marker='o', label='MARL', color='red')
+        plt.plot(fov_range, avg_AUS2, marker='s', label='MCRAIC', color='blue')
         plt.title('FoV vs. AUS')
         plt.xlabel('Field of View (degrees)')
         plt.ylabel('Average User Satisfaction')
+        plt.ylim(0.1, 1)
         plt.grid(True)
-        # Set y-axis limits (adjust the values as needed)
-        plt.ylim(0.1, 1)  
-        # Save figure to file
+        plt.legend()
         plt.savefig('diagram/fov_vs_aus.png', dpi=300, bbox_inches='tight')
         plt.show()
 
-    def plot_fov_vs_SFI(avg_SFI:List[float]):
+    def plot_fov_vs_SFI(avg_SFI1: List[float], avg_SFI2: List[float]):
         fov_range = list(range(30, 91, 5))
-        # Plotting
         plt.figure()
-        plt.plot(fov_range, avg_SFI, marker='o')
+        plt.plot(fov_range, avg_SFI1, marker='o', label='MARL', color='red')
+        plt.plot(fov_range, avg_SFI2, marker='s', label='MCRAIC', color='blue')
         plt.title('FoV vs. SFI')
         plt.xlabel('Field of View (degrees)')
         plt.ylabel('Service Fairness Index')
+        plt.ylim(0.2, 1)
         plt.grid(True)
-        # Set y-axis limits (adjust the values as needed)
-        plt.ylim(0.2, 1)  
-        # Save figure to file
+        plt.legend()
         plt.savefig('diagram/fov_vs_sfi.png', dpi=300, bbox_inches='tight')
         plt.show()
-    
+
     def plot_nue_vs_STP(avg_STP:List[float]):
         nue_range = list(range(1, 25, 1))
         # Plotting
