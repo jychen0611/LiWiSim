@@ -5,10 +5,7 @@ from plot import Plot as p
 import mcraic as mc
 import marl as rl
 
-
-if __name__ == "__main__":
-    print("Simulation Start!")
-    
+def FoV_Experiments():
     ########################################################################
     # Experiments with FoV angle                                           #
     ########################################################################
@@ -24,7 +21,7 @@ if __name__ == "__main__":
         satisfaction = 0
         fairness = 0
         for j in range(cfg.TIMES):
-            [STP, AUS, SFI] = rl.MARL_EXE(N_UES=cfg.N_UE, FoV=i)
+            [STP, AUS, SFI] = rl.MARL_EXE(N_UE=cfg.N_UE, FoV=i)
             sum_rate += STP
             satisfaction += AUS
             fairness += SFI
@@ -57,8 +54,8 @@ if __name__ == "__main__":
     p.plot_fov_vs_STP(MARL_FoV_avg_STP, MCRAIC_FoV_avg_STP)
     p.plot_fov_vs_AUS(MARL_FoV_avg_AUS, MCRAIC_FoV_avg_AUS)
     p.plot_fov_vs_SFI(MARL_FoV_avg_SFI, MCRAIC_FoV_avg_SFI)
-    
-    
+
+def N_UE_Experiments():
     ########################################################################
     # Experiments with N_UE                                                #
     ########################################################################
@@ -106,6 +103,21 @@ if __name__ == "__main__":
     p.plot_nue_vs_STP(MARL_N_UE_avg_STP, MCRAIC_N_UE_avg_STP)
     p.plot_nue_vs_AUS(MARL_N_UE_avg_AUS, MCRAIC_N_UE_avg_STP)
     p.plot_nue_vs_SFI(MARL_N_UE_avg_SFI, MCRAIC_N_UE_avg_STP)
+
+if __name__ == "__main__":
+    print("Simulation Start!")
+    
+    ########################################################################
+    # Experiments with FoV angle                                           #
+    ########################################################################
+
+    FoV_Experiments()
+    
+    ########################################################################
+    # Experiments with N_UE                                                #
+    ########################################################################
+
+    N_UE_Experiments()
     
     
     
