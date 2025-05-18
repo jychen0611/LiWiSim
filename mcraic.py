@@ -104,7 +104,7 @@ def UPARU(N_ue:int, K:List[Set[int]], H:List[Set[int]], r:List[float], q:List[Li
         for j in K[i]:
             q_i = max(q_i, q[i][j])
         if q_i == 0:
-            print("err: q_i is zero!")
+            # print("err: q_i is zero!")
             continue
 
         # Generate primary UE set Y_i by equation (18);
