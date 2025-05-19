@@ -465,7 +465,7 @@ class Plot():
         plt.ylim(bottom=0)  
         plt.grid(True)
         plt.legend()
-        plt.savefig('diagram/fov_vs_sfi.png', dpi=300, bbox_inches='tight')
+        plt.savefig('diagram/fov_vs_usr.png', dpi=300, bbox_inches='tight')
         plt.show()
 
     def plot_nue_vs_STP(avg_STP1: List[float], avg_STP2: List[float]):
