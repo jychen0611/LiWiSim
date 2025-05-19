@@ -44,10 +44,12 @@ N_WIFI = 1
 # Default number of UEs
 N_UE = 25
 # Default field of view angle of PD
-F_O_V = 50 # degree
+F_O_V = 45 # degree
 
 # Experiment times
-TIMES = 20
+TIMES = 10
 
 # Episode
 EPISODE = 700
+# Plot episode related diagram
+PLOT_EPISODE_RELATED_DIAGRAM = False
