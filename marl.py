@@ -405,13 +405,6 @@ def MARL_EXE(N_UE, FoV):
         
         vlc_data_rate = [vlc_data_rate_R, vlc_data_rate_G, vlc_data_rate_B]
         #####################################################################
-        wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(N_UE)]
-        # p.plot_wifi_channel_gain_vector(wifi_channel_gain)
-        wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=len(wifi)) for i in range(N_UE)]
-        # p.plot_wifi_snr_vector(wifi_snr)
-        wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_wifi_ue=len(wifi)) for i in range(N_UE)]
-        #p.plot_wifi_data_rate_vector(wifi_data_rate)
-        #####################################################################
         state = []
         ap_idx_list = []
         for i in range(N_UE):
@@ -430,6 +423,23 @@ def MARL_EXE(N_UE, FoV):
         # state = env.reset()
         for t in range(1):
             actions = agent.select_actions(state)
+            # Check the number of UE that connected to WiFi
+            N_wifi_ue = 0
+            for i in actions:
+                if i == 0:
+                    N_wifi_ue += 1
+            # Caculate the WiFi data rate of each UE
+            #####################################################################
+            wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(N_UE)]
+            # p.plot_wifi_channel_gain_vector(wifi_channel_gain)
+            wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=N_wifi_ue) for i in range(N_UE)]
+            # p.plot_wifi_snr_vector(wifi_snr)
+            wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_wifi_ue=N_wifi_ue) for i in range(N_UE)]
+            #p.plot_wifi_data_rate_vector(wifi_data_rate)
+            #####################################################################
+
+
+
             next_state, reward, STP, AUS, SFI, USR, done = env.step(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
             for i in range(N_UE):
                 agent.buffers[i].push(state[i], actions[i], reward, next_state[i])
