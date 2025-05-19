@@ -421,7 +421,7 @@ def MCRAIC_EXE(N_UE, FoV):
     else:
         SFI = 0.5
 
-    # Calculate User Satisfication Rate (USR)
+    # Calculate User Satisfaction Rate (USR)
     USR = 0
     satisfied_ue = 0
     for i in range(N_UE):

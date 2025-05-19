@@ -186,8 +186,8 @@ class HybridSelectionEnv:
             total_data_rate_of_each_ue[ue] += wifi_data_rate[ue]
             STP += wifi_data_rate[ue]
             # Update reward
-            reward += wifi_data_rate[ue]
-            state[ue][0] -= wifi_data_rate[ue]
+            reward += wifi_data_rate[ue] 
+            # state[ue][0] -= wifi_data_rate[ue]
         next_state = state
 
         # Caculate average user satisfaction (AUS)
@@ -211,7 +211,7 @@ class HybridSelectionEnv:
         else:
             SFI = 0.5
 
-        # Calculate User Satisfication Rate (USR)
+        # Calculate User Satisfaction Rate (USR)
         USR = 0
         satisfied_ue = 0
         for i in range(self.n_ue):
@@ -424,21 +424,19 @@ def MARL_EXE(N_UE, FoV):
         for t in range(1):
             actions = agent.select_actions(state)
             # Check the number of UE that connected to WiFi
-            N_wifi_ue = 0
+            N_wifi_UE = 0
             for i in actions:
                 if i == 0:
-                    N_wifi_ue += 1
+                    N_wifi_UE += 1
             # Caculate the WiFi data rate of each UE
             #####################################################################
             wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(N_UE)]
             # p.plot_wifi_channel_gain_vector(wifi_channel_gain)
-            wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=N_wifi_ue) for i in range(N_UE)]
+            wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=N_wifi_UE) for i in range(N_UE)]
             # p.plot_wifi_snr_vector(wifi_snr)
-            wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_wifi_ue=N_wifi_ue) for i in range(N_UE)]
+            wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_wifi_ue=N_wifi_UE) for i in range(N_UE)]
             #p.plot_wifi_data_rate_vector(wifi_data_rate)
             #####################################################################
-
-
 
             next_state, reward, STP, AUS, SFI, USR, done = env.step(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
             for i in range(N_UE):
