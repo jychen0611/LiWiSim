@@ -78,6 +78,8 @@ class HybridSelectionEnv:
         return np.stack([self.required_rates, nearest_dist, ue_counts], axis=1)
     '''
     def step(self, actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate):
+        # record reward 
+        reward = 0
         wifi = []
         lifi = []
         for i in range(self.n_ue):
@@ -102,12 +104,15 @@ class HybridSelectionEnv:
                 total_data_rate_of_each_ue[ue] += vlc_data_rate[band][ue][best]
                 # Update STP
                 STP += vlc_data_rate[band][ue][best]
+                # Update reward
+                reward += vlc_data_rate[band][ue][best]
                 # Update the require data rate
                 state[ue][0] -= vlc_data_rate[band][ue][best]
 
                 if state[ue][0] <= 0:
                     break
 
+        # (skip reward)            
         for ue in lifi:
             if total_data_rate_of_each_ue[ue] == 0:
                 for ap in K[ue]:
@@ -117,13 +122,15 @@ class HybridSelectionEnv:
                         total_data_rate_of_each_ue[ue] += vlc_data_rate[band][ue][ap]
                         # Update STP
                         STP += vlc_data_rate[band][ue][ap]
+                        # Update reward
+                        reward += vlc_data_rate[band][ue][ap]
                         # Update the require data rate
                         state[ue][0] -= vlc_data_rate[band][ue][ap]
 
                         if state[ue][0] <= 0:
                             break
                         
-
+        # (skip reward)                      
         for ue in lifi:
             if state[ue][0] > 0:
                 for ap in K[ue]:
@@ -133,6 +140,8 @@ class HybridSelectionEnv:
                         total_data_rate_of_each_ue[ue] += vlc_data_rate[band][ue][ap]
                         # Update STP
                         STP += vlc_data_rate[band][ue][ap]
+                        # Update reward
+                        reward += vlc_data_rate[band][ue][ap]
                         # Update the require data rate
                         state[ue][0] -= vlc_data_rate[band][ue][ap]
                         
@@ -141,7 +150,7 @@ class HybridSelectionEnv:
                     
                     if state[ue][0] <= 0:
                             break
-
+                          
         for ue in lifi:
             best = ap_idx_list[ue]
             if best == -1:
@@ -152,9 +161,12 @@ class HybridSelectionEnv:
                 total_data_rate_of_each_ue[ue] += vlc_data_rate[band][ue][best]
                 # Update STP
                 STP += vlc_data_rate[band][ue][best]
+                # Update reward
+                reward += vlc_data_rate[band][ue][best]
                 # Update the require data rate
                 state[ue][0] -= vlc_data_rate[band][ue][best]
-
+        
+        # Allocate the remaining bandwidth (skip reward and don't update state (require data rate))
         for ap in range(N_VLC):
             for ue in H[ap]:
                 while C[ap]:
@@ -163,14 +175,18 @@ class HybridSelectionEnv:
                     total_data_rate_of_each_ue[ue] += vlc_data_rate[band][ue][ap]
                     # Update STP
                     STP += vlc_data_rate[band][ue][ap]
+                    # Update reward
+                    # reward += vlc_data_rate[band][ue][ap]
                     # Update the require data rate
-                    state[ue][0] -= vlc_data_rate[band][ue][ap]
-
+                    # state[ue][0] -= vlc_data_rate[band][ue][ap]
+        
         # wifi allocation #################################################################################
         # Calculate data rate obtained from WiFi 
         for ue in wifi:
             total_data_rate_of_each_ue[ue] += wifi_data_rate[ue]
             STP += wifi_data_rate[ue]
+            # Update reward
+            reward += wifi_data_rate[ue]
             state[ue][0] -= wifi_data_rate[ue]
         next_state = state
 
@@ -195,7 +211,15 @@ class HybridSelectionEnv:
         else:
             SFI = 0.5
 
-        return next_state, STP, AUS, SFI, False
+        # Calculate User Satisfication Rate (USR)
+        USR = 0
+        satisfied_ue = 0
+        for i in range(self.n_ue):
+            if total_data_rate_of_each_ue[i]/require_data_rate[i] >= 1:
+                satisfied_ue += 1
+        USR = satisfied_ue / self.n_ue
+
+        return next_state, reward, STP, AUS, SFI, USR, False
 
 # MARL Agent
 class MultiUEAgent:
@@ -205,11 +229,11 @@ class MultiUEAgent:
         self.target_net = DQN(STATE_DIM, ACTION_DIM).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.optim = optim.Adam(self.policy_net.parameters(), lr=1e-3)
-        self.buffers = [ReplayBuffer(10000) for _ in range(self.n_ue)]
+        self.buffers = [ReplayBuffer(10000) for _ in range(self.n_ue)] # ReplayBuffer(10000)
         self.criteria = nn.MSELoss()
         self.gamma = 0.95
         self.epsilon = 1.0
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.995 # 0.995
         self.epsilon_min = 0.1
 
     def select_actions(self, states):
@@ -259,15 +283,20 @@ def MARL_EXE(N_UE, FoV):
     # Define location of WiFi AP
     wifi_location = (cfg.L/2, cfg.W/2, cfg.H)
 
+    # Visualize LiWi Network 
+    # p.plot_network_distribution(ue_locations, vlc_locations, wifi_location)
+    # p.plot_network_distribution_with_labels(ue_locations, vlc_locations, wifi_location)
+
     # Generate the required data rate (Mbps) of each UE
     rate_options = {10, 20, 40, 60, 80, 100}
     require_data_rate = [random.choice(list(rate_options)) for i in range(N_UE)]
 
-
+    loss_list = []
+    reward_list = []
     STP_list = []
     AUS_list = []
     SFI_list = []
-    loss_list = []
+    USR_list = []
     #####################################################################
 
     for episode in range(cfg.EPISODE):
@@ -280,9 +309,6 @@ def MARL_EXE(N_UE, FoV):
         # Calculate the geometric distance of each AP/UE pair
         distance = [[l.geometric_distance(ue_locations[i], vlc_locations[j]) for j in range(cfg.N_VLC)] for i in range(N_UE)]
 
-        # Visualize LiWi Network 
-        # p.plot_network_distribution(ue_locations, vlc_locations, wifi_location)
-        # p.plot_network_distribution_with_labels(ue_locations, vlc_locations, wifi_location)
         # Calculate the angle between each VLC AP/UE
         angle = [[l.calculate_angles(ue_locations[i], vlc_locations[j])[0] for j in range(cfg.N_VLC)] for i in range(N_UE)]
         # Calculate optical concenteator
@@ -404,26 +430,33 @@ def MARL_EXE(N_UE, FoV):
         # state = env.reset()
         for t in range(1):
             actions = agent.select_actions(state)
-            next_state, STP, AUS, SFI, done = env.step(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
-            reward = STP
+            next_state, reward, STP, AUS, SFI, USR, done = env.step(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
             for i in range(N_UE):
                 agent.buffers[i].push(state[i], actions[i], reward, next_state[i])
             agent.learn()
-            state = next_state
+            # state = next_state
         if episode % 100 == 0:
             print(f"Episode {episode}, epsilon: {agent.epsilon:.2f}, reward: {reward:.2f}, action: {actions}")
         
+        reward_list.append(reward)
         STP_list.append(STP)
         AUS_list.append(AUS)
         SFI_list.append(SFI)
-    #p.plot_time_vs_STP(STP_list)  
-    #p.plot_time_vs_AUS(AUS_list)  
-    #p.plot_time_vs_SFI(SFI_list)  
+        USR_list.append(USR)
+
+    if cfg.PLOT_EPISODE_RELATED_DIAGRAM:
+        p.plot_episode_vs_reward(reward_list) 
+        p.plot_episode_vs_STP(STP_list)  
+        p.plot_episode_vs_AUS(AUS_list)  
+        p.plot_episode_vs_SFI(SFI_list)  
+        p.plot_episode_vs_USR(USR_list) 
     STP_last_100 = STP_list[-100:]
     AUS_last_100 = AUS_list[-100:]
     SFI_last_100 = SFI_list[-100:]
+    USR_last_100 = USR_list[-100:]
     STP = sum(STP_last_100) / 100
     AUS = sum(AUS_last_100) / 100
     SFI = sum(SFI_last_100) / 100
-    return STP, AUS, SFI
+    USR = sum(USR_last_100) / 100
+    return STP, AUS, SFI, USR
 

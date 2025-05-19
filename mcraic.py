@@ -420,6 +420,15 @@ def MCRAIC_EXE(N_UE, FoV):
         SFI = (upper ** 2) / (N_UE * lower)    
     else:
         SFI = 0.5
+
+    # Calculate User Satisfication Rate (USR)
+    USR = 0
+    satisfied_ue = 0
+    for i in range(N_UE):
+        if total_data_rate_of_each_ue[i]/require_data_rate[i] >= 1:
+            satisfied_ue += 1
+    USR = satisfied_ue / N_UE
+
     # p.plot_total_data_rate(total_data_rate_of_each_ue=total_data_rate_of_each_ue, require_data_rate=require_data_rate)
     # print("System Throughput: ", STP)
-    return STP, AUS, SFI
+    return STP, AUS, SFI, USR

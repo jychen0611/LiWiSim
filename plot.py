@@ -453,6 +453,21 @@ class Plot():
         plt.savefig('diagram/fov_vs_sfi.png', dpi=300, bbox_inches='tight')
         plt.show()
 
+    def plot_fov_vs_USR(avg_USR1: List[float], avg_USR2: List[float]):
+        fov_range = list(range(30, 91, 5))
+        plt.figure()
+        plt.plot(fov_range, avg_USR1, marker='o', label='MARL', color='red')
+        plt.plot(fov_range, avg_USR2, marker='s', label='MCRAIC', color='blue')
+        plt.title('FoV vs. USR')
+        plt.xlabel('Field of View (degrees)')
+        plt.ylabel('User Satisfication Rate')
+        # plt.ylim(0.2, 1)
+        plt.ylim(bottom=0)  
+        plt.grid(True)
+        plt.legend()
+        plt.savefig('diagram/fov_vs_sfi.png', dpi=300, bbox_inches='tight')
+        plt.show()
+
     def plot_nue_vs_STP(avg_STP1: List[float], avg_STP2: List[float]):
         nue_range = list(range(1, 25, 1))
         # Plotting
@@ -506,13 +521,31 @@ class Plot():
         plt.savefig('diagram/nue_vs_sfi.png', dpi=300, bbox_inches='tight')
         plt.show()
 
-    def plot_time_vs_STP(avg_STP:List[float]):
-        time_range = list(range(0, cfg.EPISODE, 1))
+    def plot_nue_vs_USR(avg_USR1: List[float], avg_USR2: List[float]):
+        nue_range = list(range(1, 25, 1))
         # Plotting
         plt.figure()
-        plt.plot(time_range, avg_STP, marker='o')
-        plt.title('Time vs. System Throughput')
-        plt.xlabel('Time (s)')
+        plt.plot(nue_range, avg_USR1, marker='o', label='MARL', color='red')
+        plt.plot(nue_range, avg_USR2, marker='s', label='MCRAIC', color='blue')
+        plt.title('N_UE vs. USR')
+        plt.xlabel('Number of UEs')
+        plt.ylabel('User Satisfication Rate')
+        # Set y-axis limits (adjust the values as needed)
+        # plt.ylim(0.6, 1)  
+        plt.ylim(bottom=0)  
+        plt.grid(True)
+        plt.legend()
+        # Save figure to file
+        plt.savefig('diagram/nue_vs_usr.png', dpi=300, bbox_inches='tight')
+        plt.show()
+
+    def plot_episode_vs_STP(avg_STP:List[float]):
+        episode_range = list(range(0, cfg.EPISODE, 1))
+        # Plotting
+        plt.figure()
+        plt.plot(episode_range, avg_STP, marker='o')
+        plt.title('Episode vs. System Throughput')
+        plt.xlabel('EPISODE')
         plt.ylabel('System Throughput (Mbps)')
         plt.grid(True)
         # Set y-axis limits (adjust the values as needed)
@@ -521,13 +554,13 @@ class Plot():
         # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
         plt.show()
 
-    def plot_time_vs_AUS(avg_AUS:List[float]):
-        time_range = list(range(0, cfg.EPISODE, 1))
+    def plot_episode_vs_AUS(avg_AUS:List[float]):
+        episode_range = list(range(0, cfg.EPISODE, 1))
         # Plotting
         plt.figure()
-        plt.plot(time_range, avg_AUS, marker='o')
-        plt.title('Time vs. AUS')
-        plt.xlabel('Time (s)')
+        plt.plot(episode_range, avg_AUS, marker='o')
+        plt.title('Episode vs. AUS')
+        plt.xlabel('EPISODE')
         plt.ylabel('Average User Satisfaction')
         plt.grid(True)
         # Set y-axis limits (adjust the values as needed)
@@ -536,13 +569,13 @@ class Plot():
         # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
         plt.show()
 
-    def plot_time_vs_SFI(avg_SFI:List[float]):
-        time_range = list(range(0, cfg.EPISODE, 1))
+    def plot_episode_vs_SFI(avg_SFI:List[float]):
+        episode_range = list(range(0, cfg.EPISODE, 1))
         # Plotting
         plt.figure()
-        plt.plot(time_range, avg_SFI, marker='o')
-        plt.title('Time vs. SFI')
-        plt.xlabel('Time (s)')
+        plt.plot(episode_range, avg_SFI, marker='o')
+        plt.title('Episode vs. SFI')
+        plt.xlabel('EPISODE')
         plt.ylabel('Service Fairness Index')
         plt.grid(True)
         # Set y-axis limits (adjust the values as needed)
@@ -550,4 +583,33 @@ class Plot():
         # Save figure to file
         # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
         plt.show()
-    
+        
+    def plot_episode_vs_USR(avg_USR:List[float]):
+        episode_range = list(range(0, cfg.EPISODE, 1))
+        # Plotting
+        plt.figure()
+        plt.plot(episode_range, avg_USR, marker='o')
+        plt.title('Episode vs. USR')
+        plt.xlabel('EPISODE')
+        plt.ylabel('User Satisfication Rate')
+        plt.grid(True)
+        # Set y-axis limits (adjust the values as needed)
+        # plt.ylim(bottom=0)  
+        # Save figure to file
+        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.show()
+
+    def plot_episode_vs_reward(reward:List[float]):
+        episode_range = list(range(0, cfg.EPISODE, 1))
+        # Plotting
+        plt.figure()
+        plt.plot(episode_range, reward, marker='o')
+        plt.title('Episode v.s. Reward')
+        plt.xlabel('EPISODE')
+        plt.ylabel('Reward')
+        plt.grid(True)
+        # Set y-axis limits (adjust the values as needed)
+        # plt.ylim(bottom=0)  
+        # Save figure to file
+        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.show()
