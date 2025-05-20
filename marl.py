@@ -59,25 +59,131 @@ class ReplayBuffer:
         return len(self.buffer)
 
 # Environment
-class HybridSelectionEnv:
+class HybridNetworkEnv:
     def __init__(self, N_UE):
         self.n_ue = N_UE
-    '''
-    def reset(self):
-        self.ue_positions = np.random.rand(N_UES, 3) * np.array([10.0, 10.0, 3.0])
-        self.vlc_positions = np.array([[2, 2, 3], [2, 8, 3], [8, 2, 3], [8, 8, 3]])
-        self.required_rates = np.random.uniform(1, 10, size=N_UES)
-        return self._get_state()
 
-    def _get_state(self):
-        distances = np.linalg.norm(self.ue_positions[:, None, :] - self.vlc_positions[None, :, :], axis=-1)
-        nearest_dist = np.min(distances, axis=1)
-        nearest_ap = np.argmin(distances, axis=1)
-        vlc_user_counts = np.bincount(nearest_ap, minlength=len(self.vlc_positions))
-        ue_counts = np.array([vlc_user_counts[i] for i in nearest_ap])
-        return np.stack([self.required_rates, nearest_dist, ue_counts], axis=1)
-    '''
-    def step(self, actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate):
+    def initialize_hybrid_network(self):
+        # Uniformly generate the location of each VLC AP/UE
+        ue_locations = [l.generate_ue_location() for _ in range(self.n_ue)]
+        vlc_locations = l.generate_vlc_location(cfg.N_VLC)
+        # Define location of WiFi AP
+        wifi_location = (cfg.L/2, cfg.W/2, cfg.H)
+
+        # Visualize LiWi Network 
+        # p.plot_network_distribution(ue_locations, vlc_locations, wifi_location)
+        # p.plot_network_distribution_with_labels(ue_locations, vlc_locations, wifi_location)
+
+        # Generate the required data rate (Mbps) of each UE
+        rate_options = {10, 20, 40, 60, 80, 100}
+        require_data_rate = [random.choice(list(rate_options)) for i in range(self.n_ue)]
+
+        return ue_locations, vlc_locations, wifi_location, require_data_rate
+    
+    def set_state(self, distance, remain_data_rate, K, H):
+        state = []
+        ap_idx_list = []
+        for i in range(self.n_ue):
+            d = 100
+            ap_idx = -1
+            for j in K[i]:
+                if distance[i][j] < d:
+                    d = distance[i][j]
+                    ap_idx = j
+            ap_idx_list.append(ap_idx)
+            s_i = [remain_data_rate[i], d, len(H[ap_idx])] 
+            state.append(s_i)
+        return state, ap_idx_list
+    
+    def calculate_vlc_data_rate(self, distance, angle, optical_concentrator, FoV, K):
+        # Calculate VLC data rate based on R-band / G-band / B-band
+        vlc_channel_gain = [[0 for j in range(cfg.N_VLC)] for i in range(self.n_ue)]
+        vlc_sinr_R = [[0 for j in range(cfg.N_VLC)] for i in range(self.n_ue)]
+        vlc_data_rate_R = [[0 for j in range(cfg.N_VLC)] for i in range(self.n_ue)]
+        vlc_sinr_G = [[0 for j in range(cfg.N_VLC)] for i in range(self.n_ue)]
+        vlc_data_rate_G = [[0 for j in range(cfg.N_VLC)] for i in range(self.n_ue)]
+        vlc_sinr_B = [[0 for j in range(cfg.N_VLC)] for i in range(self.n_ue)]
+        vlc_data_rate_B = [[0 for j in range(cfg.N_VLC)] for i in range(self.n_ue)]
+        # For each UE
+        for i in range(self.n_ue):
+            # For each available AP of UE_i
+            for j in K[i]:
+                # Calculate channel gain
+                vlc_channel_gain[i][j] = f.vlc_channel_gain(d = distance[i][j], irradiant_angle=angle[i][j], incident_angle=angle[i][j], optical_concentrator=optical_concentrator[i][j], FoV=FoV)
+                # Calculate the inter-cell interference of R-band
+                interference = 0
+                P_ici = 0
+                P_tx_watts = cfg.P_TX_VLC_R
+                OE = cfg.R_OE
+                for k in K[i]:
+                    if k==j:
+                        continue 
+
+                    P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)
+                    interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)) ** 2 )
+                # Calculate shot noise
+                shot = f.shot_noise(P_sig=OE*P_tx_watts*vlc_channel_gain[i][j], P_ici=P_ici)
+                # Calculate sinr
+                vlc_sinr_R[i][j] = f.vlc_sinr(H_vlc=vlc_channel_gain[i][j], shot=shot, interference=interference, band=0)
+                # Calculate data rate
+                vlc_data_rate_R[i][j] = f.vlc_data_rate(sinr=vlc_sinr_R[i][j])
+
+                # Calculate the inter-cell interference of G-band
+                interference = 0
+                P_ici = 0
+                P_tx_watts = cfg.P_TX_VLC_G
+                OE = cfg.G_OE
+                for k in K[i]:
+                    if k==j:
+                        continue 
+
+                    P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)
+                    interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)) ** 2 )
+                # Calculate shot noise
+                shot = f.shot_noise(P_sig=OE*P_tx_watts*vlc_channel_gain[i][j], P_ici=P_ici)
+                # Calculate sinr
+                vlc_sinr_G[i][j] = f.vlc_sinr(H_vlc=vlc_channel_gain[i][j], shot=shot, interference=interference, band=1)
+                # Calculate data rate
+                vlc_data_rate_G[i][j] = f.vlc_data_rate(sinr=vlc_sinr_G[i][j])
+
+                # Calculate the inter-cell interference of B-band
+                interference = 0
+                P_ici = 0
+                P_tx_watts = cfg.P_TX_VLC_B
+                OE = cfg.B_OE
+                for k in K[i]:
+                    if k==j:
+                        continue 
+
+                    P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)
+                    interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)) ** 2 )
+                # Calculate shot noise
+                shot = f.shot_noise(P_sig=OE*P_tx_watts*vlc_channel_gain[i][j], P_ici=P_ici)
+                # Calculate sinr
+                vlc_sinr_B[i][j] = f.vlc_sinr(H_vlc=vlc_channel_gain[i][j], shot=shot, interference=interference, band=2)
+                # Calculate data rate
+                vlc_data_rate_B[i][j] = f.vlc_data_rate(sinr=vlc_sinr_B[i][j])
+        
+        vlc_data_rate = [vlc_data_rate_R, vlc_data_rate_G, vlc_data_rate_B]
+        return vlc_data_rate
+    
+    def calculate_wifi_data_rate(self, actions, ue_locations, wifi_location):
+        # Check the number of UE that connected to WiFi
+        N_wifi_UE = 0
+        for i in actions:
+            if i == 0:
+                N_wifi_UE += 1
+        # Caculate the WiFi data rate of each UE
+        #####################################################################
+        wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(self.n_ue)]
+        # p.plot_wifi_channel_gain_vector(wifi_channel_gain)
+        wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=N_wifi_UE) for i in range(self.n_ue)]
+        # p.plot_wifi_snr_vector(wifi_snr)
+        wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_wifi_ue=N_wifi_UE) for i in range(self.n_ue)]
+        #p.plot_wifi_data_rate_vector(wifi_data_rate)
+        return wifi_data_rate
+    
+    def resource_allocator(self, actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate):
         # record reward 
         reward = 0
         wifi = []
@@ -273,42 +379,24 @@ class MultiUEAgent:
 
 def MARL_EXE(N_UE, FoV):
     # Training Loop
-    env = HybridSelectionEnv(N_UE)
+    env = HybridNetworkEnv(N_UE)
     agent = MultiUEAgent(N_UE)
-
-    # Environment #######################################################
-    # Uniformly generate the location of each VLC AP/UE
-    ue_locations = [l.generate_ue_location() for _ in range(N_UE)]
-    vlc_locations = l.generate_vlc_location(cfg.N_VLC)
-    # Define location of WiFi AP
-    wifi_location = (cfg.L/2, cfg.W/2, cfg.H)
-
-    # Visualize LiWi Network 
-    # p.plot_network_distribution(ue_locations, vlc_locations, wifi_location)
-    # p.plot_network_distribution_with_labels(ue_locations, vlc_locations, wifi_location)
-
-    # Generate the required data rate (Mbps) of each UE
-    rate_options = {10, 20, 40, 60, 80, 100}
-    require_data_rate = [random.choice(list(rate_options)) for i in range(N_UE)]
-
+ 
+    # Initialize Network Environment 
+    [ue_locations, vlc_locations, wifi_location, require_data_rate] = env.initialize_hybrid_network()
+    
     loss_list = []
     reward_list = []
     STP_list = []
     AUS_list = []
     SFI_list = []
     USR_list = []
-    #####################################################################
 
     for episode in range(cfg.EPISODE):
-        # Record the UE who connected to wifi
-        wifi = []
-        # Environment #######################################################
         # Update UEs location
-        # ue_locations = [l.generate_ue_location() for _ in range(N_UES)]
         ue_locations = l.move_ue_positions(ue_locations)
         # Calculate the geometric distance of each AP/UE pair
         distance = [[l.geometric_distance(ue_locations[i], vlc_locations[j]) for j in range(cfg.N_VLC)] for i in range(N_UE)]
-
         # Calculate the angle between each VLC AP/UE
         angle = [[l.calculate_angles(ue_locations[i], vlc_locations[j])[0] for j in range(cfg.N_VLC)] for i in range(N_UE)]
         # Calculate optical concenteator
@@ -332,117 +420,29 @@ def MARL_EXE(N_UE, FoV):
                     Hj.add(i)
             H.append(Hj)
 
-        
+        # Set remain data rate requirement
         remain_data_rate = require_data_rate.copy()
 
+        # Get network environment state
+        [state, ap_idx_list] = env.set_state(distance, remain_data_rate, K, H) 
+
+        # Each UE, acting as an agent, selects an action
+        actions = agent.select_actions(state)
+
         # Calculate VLC data rate based on R-band / G-band / B-band
-        vlc_channel_gain = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
-        vlc_sinr_R = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
-        vlc_data_rate_R = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
-        vlc_sinr_G = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
-        vlc_data_rate_G = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
-        vlc_sinr_B = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
-        vlc_data_rate_B = [[0 for j in range(cfg.N_VLC)] for i in range(N_UE)]
-        # For each UE
-        for i in range(N_UE):
-            # For each available AP of UE_i
-            for j in K[i]:
-                # Calculate channel gain
-                vlc_channel_gain[i][j] = f.vlc_channel_gain(d = distance[i][j], irradiant_angle=angle[i][j], incident_angle=angle[i][j], optical_concentrator=optical_concentrator[i][j], FoV=FoV)
-                # Calculate the inter-cell interference of R-band
-                interference = 0
-                P_ici = 0
-                P_tx_watts = cfg.P_TX_VLC_R
-                OE = cfg.R_OE
-                for k in K[i]:
-                    if k==j:
-                        continue 
+        vlc_data_rate = env.calculate_vlc_data_rate(distance, angle, optical_concentrator, FoV, K)
 
-                    P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)
-                    interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)) ** 2 )
-                # Calculate shot noise
-                shot = f.shot_noise(P_sig=OE*P_tx_watts*vlc_channel_gain[i][j], P_ici=P_ici)
-                # Calculate sinr
-                vlc_sinr_R[i][j] = f.vlc_sinr(H_vlc=vlc_channel_gain[i][j], shot=shot, interference=interference, band=0)
-                # Calculate data rate
-                vlc_data_rate_R[i][j] = f.vlc_data_rate(sinr=vlc_sinr_R[i][j])
+        # Calculate wifi data rate
+        wifi_data_rate = env.calculate_wifi_data_rate(actions, ue_locations, wifi_location)
 
-                # Calculate the inter-cell interference of G-band
-                interference = 0
-                P_ici = 0
-                P_tx_watts = cfg.P_TX_VLC_G
-                OE = cfg.G_OE
-                for k in K[i]:
-                    if k==j:
-                        continue 
-
-                    P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)
-                    interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)) ** 2 )
-                # Calculate shot noise
-                shot = f.shot_noise(P_sig=OE*P_tx_watts*vlc_channel_gain[i][j], P_ici=P_ici)
-                # Calculate sinr
-                vlc_sinr_G[i][j] = f.vlc_sinr(H_vlc=vlc_channel_gain[i][j], shot=shot, interference=interference, band=1)
-                # Calculate data rate
-                vlc_data_rate_G[i][j] = f.vlc_data_rate(sinr=vlc_sinr_G[i][j])
-
-                # Calculate the inter-cell interference of B-band
-                interference = 0
-                P_ici = 0
-                P_tx_watts = cfg.P_TX_VLC_B
-                OE = cfg.B_OE
-                for k in K[i]:
-                    if k==j:
-                        continue 
-
-                    P_ici += OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)
-                    interference += ((OE*P_tx_watts*f.vlc_channel_gain(d = distance[i][k], irradiant_angle=angle[i][k], incident_angle=angle[i][k], optical_concentrator=optical_concentrator[i][k], FoV=FoV)) ** 2 )
-                # Calculate shot noise
-                shot = f.shot_noise(P_sig=OE*P_tx_watts*vlc_channel_gain[i][j], P_ici=P_ici)
-                # Calculate sinr
-                vlc_sinr_B[i][j] = f.vlc_sinr(H_vlc=vlc_channel_gain[i][j], shot=shot, interference=interference, band=2)
-                # Calculate data rate
-                vlc_data_rate_B[i][j] = f.vlc_data_rate(sinr=vlc_sinr_B[i][j])
+        # Resource allocation
+        next_state, reward, STP, AUS, SFI, USR, done = env.resource_allocator(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
         
-        vlc_data_rate = [vlc_data_rate_R, vlc_data_rate_G, vlc_data_rate_B]
-        #####################################################################
-        state = []
-        ap_idx_list = []
+        # Push experiences into replay buffer
         for i in range(N_UE):
-            d = 100
-            ap_idx = -1
-            for j in K[i]:
-                if distance[i][j] < d:
-                    d = distance[i][j]
-                    ap_idx = j
-            ap_idx_list.append(ap_idx)
-            s_i = [remain_data_rate[i], d, len(H[ap_idx])] 
-            state.append(s_i)
-        #####################################################################
-
-
-        # state = env.reset()
-        for t in range(1):
-            actions = agent.select_actions(state)
-            # Check the number of UE that connected to WiFi
-            N_wifi_UE = 0
-            for i in actions:
-                if i == 0:
-                    N_wifi_UE += 1
-            # Caculate the WiFi data rate of each UE
-            #####################################################################
-            wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(N_UE)]
-            # p.plot_wifi_channel_gain_vector(wifi_channel_gain)
-            wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=N_wifi_UE) for i in range(N_UE)]
-            # p.plot_wifi_snr_vector(wifi_snr)
-            wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_wifi_ue=N_wifi_UE) for i in range(N_UE)]
-            #p.plot_wifi_data_rate_vector(wifi_data_rate)
-            #####################################################################
-
-            next_state, reward, STP, AUS, SFI, USR, done = env.step(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
-            for i in range(N_UE):
-                agent.buffers[i].push(state[i], actions[i], reward, next_state[i])
-            agent.learn()
-            # state = next_state
+            agent.buffers[i].push(state[i], actions[i], reward, next_state[i])
+        agent.learn()
+        
         if episode % 100 == 0:
             print(f"Episode {episode}, epsilon: {agent.epsilon:.2f}, reward: {reward:.2f}, action: {actions}")
         
