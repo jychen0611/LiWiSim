@@ -2,6 +2,7 @@ import config as cfg
 import math
 import random
 import numpy as np
+import json
 
 
 
@@ -10,6 +11,28 @@ class Location():
         x = random.uniform(0, cfg.L)  # x-coordinate in [0, 10)
         y = random.uniform(0, cfg.W)  # y-coordinate in [0, 10)
         return (x, y, cfg.H_PD)
+
+    def generate_ue_locations_dataset(N, filename="ue_locations.json"):
+        ue_locations = []
+
+        for _ in range(N):
+            x = random.uniform(0, cfg.L)
+            y = random.uniform(0, cfg.W)
+            z = cfg.H_PD
+            ue_locations.append({"x": x, "y": y, "z": z})
+
+        with open(filename, "w") as f:
+            json.dump(ue_locations, f, indent=4)
+
+        print(f"{N} UE locations saved to '{filename}'.")
+
+    def load_ue_locations(filename="ue_locations.json"):
+        with open(filename, "r") as f:
+            ue_data = json.load(f)
+
+        locations = [(ue["x"], ue["y"], ue["z"]) for ue in ue_data]
+        return locations
+
 
     def move_ue_positions(ue_positions, step_size=0.001, room_bounds=(cfg.L, cfg.W)):
         """
