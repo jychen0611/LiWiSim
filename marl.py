@@ -380,20 +380,21 @@ class MultiUEAgent:
             self.epsilon *= self.epsilon_decay
 
 def MARL_EXE(N_UE, FoV):
-    # Training Loop
+    # Construct environment and agents
     env = HybridNetworkEnv(N_UE)
     agent = MultiUEAgent(N_UE)
  
     # Initialize Network Environment 
     [ue_locations, vlc_locations, wifi_location, require_data_rate] = env.initialize_hybrid_network()
     
-    loss_list = []
+    # Lists to record information in training routine
     reward_list = []
     STP_list = []
     AUS_list = []
     SFI_list = []
     USR_list = []
 
+    # Training Loop
     for episode in range(cfg.EPISODE):
         # Update UEs location
         ue_locations = l.move_ue_positions(ue_locations)
@@ -454,12 +455,15 @@ def MARL_EXE(N_UE, FoV):
         SFI_list.append(SFI)
         USR_list.append(USR)
 
+    # Plot episode related diagrams
     if cfg.PLOT_EPISODE_RELATED_DIAGRAM:
         p.plot_episode_vs_reward(reward_list) 
         p.plot_episode_vs_STP(STP_list)  
         p.plot_episode_vs_AUS(AUS_list)  
         p.plot_episode_vs_SFI(SFI_list)  
-        p.plot_episode_vs_USR(USR_list) 
+        p.plot_episode_vs_USR(USR_list)
+
+    # Use the average of the last 100 entries as the final result
     STP_last_100 = STP_list[-100:]
     AUS_last_100 = AUS_list[-100:]
     SFI_last_100 = SFI_list[-100:]
