@@ -169,14 +169,8 @@ class HybridNetworkEnv:
         vlc_data_rate = [vlc_data_rate_R, vlc_data_rate_G, vlc_data_rate_B]
         return vlc_data_rate
     
-    def calculate_wifi_data_rate(self, actions, ue_locations, wifi_location):
-        # Check the number of UE that connected to WiFi
-        N_wifi_UE = 0
-        for i in actions:
-            if i == 0:
-                N_wifi_UE += 1
+    def calculate_wifi_data_rate(self, N_wifi_UE, ue_locations, wifi_location):
         # Caculate the WiFi data rate of each UE
-        #####################################################################
         wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(self.n_ue)]
         # p.plot_wifi_channel_gain_vector(wifi_channel_gain)
         wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=N_wifi_UE) for i in range(self.n_ue)]
@@ -289,6 +283,7 @@ class HybridNetworkEnv:
                     # state[ue][0] -= vlc_data_rate[band][ue][ap]
         
         # wifi allocation #################################################################################
+        total_wifi_data_rate = 0  
         # Calculate data rate obtained from WiFi 
         for ue in wifi:
             total_data_rate_of_each_ue[ue] += wifi_data_rate[ue]
@@ -296,8 +291,11 @@ class HybridNetworkEnv:
             # Update reward
             reward += wifi_data_rate[ue] 
             # state[ue][0] -= wifi_data_rate[ue]
+            total_wifi_data_rate += wifi_data_rate[ue]
+        
+        # Update state
         next_state = state
-
+        
         # Caculate average user satisfaction (AUS)
         AUS = 0
         for i in range(self.n_ue):
@@ -327,7 +325,7 @@ class HybridNetworkEnv:
                 satisfied_ue += 1
         USR = satisfied_ue / self.n_ue
 
-        return next_state, reward, STP, AUS, SFI, USR, False
+        return next_state, reward, STP, AUS, SFI, USR
 
 # MARL Agent
 class MultiUEAgent:
@@ -388,6 +386,7 @@ def MARL_EXE(N_UE, FoV):
     [ue_locations, vlc_locations, wifi_location, require_data_rate] = env.initialize_hybrid_network()
     
     # Lists to record information in training routine
+    N_wifi_UE_list = []
     reward_list = []
     STP_list = []
     AUS_list = []
@@ -400,6 +399,8 @@ def MARL_EXE(N_UE, FoV):
         ue_locations = l.move_ue_positions(ue_locations)
         # Calculate the geometric distance of each AP/UE pair
         distance = [[l.geometric_distance(ue_locations[i], vlc_locations[j]) for j in range(cfg.N_VLC)] for i in range(N_UE)]
+        # Calculate the geometric distance from wifi to each UE
+        wifi_distance = [l.geometric_distance(ue_locations[i], wifi_location) for i in range(N_UE)]
         # Calculate the angle between each VLC AP/UE
         angle = [[l.calculate_angles(ue_locations[i], vlc_locations[j])[0] for j in range(cfg.N_VLC)] for i in range(N_UE)]
         # Calculate optical concenteator
@@ -435,11 +436,23 @@ def MARL_EXE(N_UE, FoV):
         # Calculate VLC data rate based on R-band / G-band / B-band
         vlc_data_rate = env.calculate_vlc_data_rate(distance, angle, optical_concentrator, FoV, K)
 
+        # Check the number of UE that connected to WiFi
+        N_wifi_UE = 0
+        for i in actions:
+            if i == 0:
+                N_wifi_UE += 1
+        
+        # If no UEs choose WiFi, force the UE closest to the WiFi AP to associate with it
+        if N_wifi_UE == 0:
+            wifi_ue = np.argmin(wifi_distance)
+            actions[wifi_ue] = 0
+            N_wifi_UE = 1
+        
         # Calculate wifi data rate
-        wifi_data_rate = env.calculate_wifi_data_rate(actions, ue_locations, wifi_location)
+        wifi_data_rate = env.calculate_wifi_data_rate(N_wifi_UE, ue_locations, wifi_location)
 
         # Resource allocation
-        next_state, reward, STP, AUS, SFI, USR, done = env.resource_allocator(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
+        next_state, reward, STP, AUS, SFI, USR = env.resource_allocator(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
         
         # Push experiences into replay buffer
         for i in range(N_UE):
@@ -449,6 +462,7 @@ def MARL_EXE(N_UE, FoV):
         if episode % 100 == 0:
             print(f"Episode {episode}, epsilon: {agent.epsilon:.2f}, reward: {reward:.2f}, action: {actions}")
         
+        N_wifi_UE_list.append(N_wifi_UE)
         reward_list.append(reward)
         STP_list.append(STP)
         AUS_list.append(AUS)
@@ -457,6 +471,7 @@ def MARL_EXE(N_UE, FoV):
 
     # Plot episode related diagrams
     if cfg.PLOT_EPISODE_RELATED_DIAGRAM:
+        p.plot_episode_vs_N_wifi_UE(N_wifi_UE_list, len(N_wifi_UE_list))
         p.plot_episode_vs_reward(reward_list) 
         p.plot_episode_vs_STP(STP_list)  
         p.plot_episode_vs_AUS(AUS_list)  

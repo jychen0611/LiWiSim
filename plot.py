@@ -613,3 +613,18 @@ class Plot():
         # Save figure to file
         # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
         plt.show()
+
+    def plot_episode_vs_N_wifi_UE(N_wifi_UE:List[float], len):
+        episode_range = list(range(0, len, 1))
+        # Plotting
+        plt.figure()
+        plt.plot(episode_range, N_wifi_UE, marker='o')
+        plt.title('Episode v.s. N_wifi_UE')
+        plt.xlabel('EPISODE')
+        plt.ylabel('Number of UEs connected to WiFi')
+        plt.grid(True)
+        # Set y-axis limits (adjust the values as needed)
+        # plt.ylim(bottom=0)  
+        # Save figure to file
+        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.show()
