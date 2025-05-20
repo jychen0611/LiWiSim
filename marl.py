@@ -25,6 +25,8 @@ N_VLC = cfg.N_VLC
 STATE_DIM = 3  # [required_rate, distance_to_nearest_VLC, N_UE_in_nearest_VLC_coverage]
 ACTION_DIM = 2  # 0: WiFi, 1: LiFi
 
+# Automatically choose the computing device:
+# Use GPU (CUDA) if available; otherwise, fall back to CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # DQN Network (shared)
