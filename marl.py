@@ -193,10 +193,21 @@ class HybridNetworkEnv:
         STP = 0
         total_data_rate_of_each_ue = [0 for i in range(self.n_ue)]
 
+        # Generate UE priority with (1/vlc_data_rate[0][i][ap_idx_list[i]])
+        ue_priority = []
+        for i in range(self.n_ue):
+            if vlc_data_rate[0][i][ap_idx_list[i]] != 0:
+                priority = 1/vlc_data_rate[0][i][ap_idx_list[i]]
+                ue_priority.append(priority)
+            else:
+                ue_priority.append(np.finfo(np.float32).max)
+        # Sort VLC UE with UE priority
+        lifi_sorted = sorted(lifi, key=lambda ue: ue_priority[ue])
+
         # The remaining band of each VLC AP
         C = [{0, 1, 2} for j in range(N_VLC)]
         # lifi allocation #################################################################################
-        for ue in lifi:
+        for ue in lifi_sorted:
             best = ap_idx_list[ue]
             if best == -1:
                 continue
@@ -214,8 +225,17 @@ class HybridNetworkEnv:
                 if state[ue][0] <= 0:
                     break
 
+        # Generate UE priority with len(K[i])
+        ue_priority = []
+        for i in range(self.n_ue):
+            priority = len(K[i])
+            ue_priority.append(priority)
+          
+        # Sort VLC UE with UE priority
+        lifi_sorted = sorted(lifi, key=lambda ue: ue_priority[ue])
+
         # (skip reward)            
-        for ue in lifi:
+        for ue in lifi_sorted:
             if total_data_rate_of_each_ue[ue] == 0:
                 for ap in K[ue]:
                     if C[ap]:
@@ -231,9 +251,9 @@ class HybridNetworkEnv:
 
                         if state[ue][0] <= 0:
                             break
-                        
+        
         # (skip reward)                      
-        for ue in lifi:
+        for ue in lifi_sorted:
             if state[ue][0] > 0:
                 for ap in K[ue]:
                     while C[ap]:
@@ -251,9 +271,9 @@ class HybridNetworkEnv:
                             break
                     
                     if state[ue][0] <= 0:
-                            break
-                          
-        for ue in lifi:
+                            break    
+
+        for ue in lifi_sorted:
             best = ap_idx_list[ue]
             if best == -1:
                 continue
@@ -268,9 +288,20 @@ class HybridNetworkEnv:
                 # Update the require data rate
                 state[ue][0] -= vlc_data_rate[band][ue][best]
         
-        # Allocate the remaining bandwidth (skip reward and don't update state (require data rate))
-        for ap in range(N_VLC):
-            for ue in H[ap]:
+        # Generate UE priority with (1/state[i][0])
+        ue_priority = []
+        for i in range(self.n_ue):
+            if state[i][0] != 0:
+                priority = 1/state[i][0]
+                ue_priority.append(priority)
+            else:
+                ue_priority.append(np.finfo(np.float32).max)
+        # Sort VLC UE with UE priority
+        lifi_sorted = sorted(lifi, key=lambda ue: ue_priority[ue])
+
+        # Allocate the remaining bandwidth (skip reward)
+        for ue in lifi_sorted:
+            for ap in K[ue]:
                 while C[ap]:
                     # assign an available band to UE-i;
                     band = C[ap].pop()
@@ -281,7 +312,8 @@ class HybridNetworkEnv:
                     # reward += vlc_data_rate[band][ue][ap]
                     # Update the require data rate
                     # state[ue][0] -= vlc_data_rate[band][ue][ap]
-        
+                    
+
         # wifi allocation #################################################################################
         total_wifi_data_rate = 0  
         # Calculate data rate obtained from WiFi 
