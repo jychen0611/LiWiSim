@@ -409,12 +409,13 @@ class Plot():
         plt.tight_layout()
         plt.show()
 
-    def plot_fov_vs_STP(avg_STP1: List[float], avg_STP2: List[float], avg_STP3: List[float]):
+    def plot_fov_vs_STP(avg_STP1: List[float], avg_STP2: List[float], avg_STP3: List[float], avg_STP4: List[float]):
         fov_range = list(range(30, 91, 5))
         plt.figure()
         plt.plot(fov_range, avg_STP1, marker='o', label='MARL', color='red')
         plt.plot(fov_range, avg_STP2, marker='s', label='MCRAIC', color='blue')
         plt.plot(fov_range, avg_STP3, marker='s', label='GREEDY', color='green')
+        plt.plot(fov_range, avg_STP4, marker='s', label='RANDOM', color='black')
         plt.title('FoV vs. System Throughput')
         plt.xlabel('Field of View (degrees)')
         plt.ylabel('System Throughput (Mbps)')
@@ -424,12 +425,13 @@ class Plot():
         plt.savefig('diagram/fov_vs_stp.png', dpi=300, bbox_inches='tight')
         #plt.show()
 
-    def plot_fov_vs_AUS(avg_AUS1: List[float], avg_AUS2: List[float], avg_AUS3: List[float]):
+    def plot_fov_vs_AUS(avg_AUS1: List[float], avg_AUS2: List[float], avg_AUS3: List[float], avg_AUS4: List[float]):
         fov_range = list(range(30, 91, 5))
         plt.figure()
         plt.plot(fov_range, avg_AUS1, marker='o', label='MARL', color='red')
         plt.plot(fov_range, avg_AUS2, marker='s', label='MCRAIC', color='blue')
         plt.plot(fov_range, avg_AUS3, marker='s', label='GREEDY', color='green')
+        plt.plot(fov_range, avg_AUS4, marker='s', label='RANDOM', color='black')
         plt.title('FoV vs. AUS')
         plt.xlabel('Field of View (degrees)')
         plt.ylabel('Average User Satisfaction')
@@ -440,12 +442,13 @@ class Plot():
         plt.savefig('diagram/fov_vs_aus.png', dpi=300, bbox_inches='tight')
         #plt.show()
 
-    def plot_fov_vs_SFI(avg_SFI1: List[float], avg_SFI2: List[float], avg_SFI3: List[float]):
+    def plot_fov_vs_SFI(avg_SFI1: List[float], avg_SFI2: List[float], avg_SFI3: List[float], avg_SFI4: List[float]):
         fov_range = list(range(30, 91, 5))
         plt.figure()
         plt.plot(fov_range, avg_SFI1, marker='o', label='MARL', color='red')
         plt.plot(fov_range, avg_SFI2, marker='s', label='MCRAIC', color='blue')
         plt.plot(fov_range, avg_SFI3, marker='s', label='GREEDY', color='green')
+        plt.plot(fov_range, avg_SFI4, marker='s', label='RANDOM', color='black')
         plt.title('FoV vs. SFI')
         plt.xlabel('Field of View (degrees)')
         plt.ylabel('Service Fairness Index')
@@ -456,12 +459,13 @@ class Plot():
         plt.savefig('diagram/fov_vs_sfi.png', dpi=300, bbox_inches='tight')
         #plt.show()
 
-    def plot_fov_vs_USR(avg_USR1: List[float], avg_USR2: List[float], avg_USR3: List[float]):
+    def plot_fov_vs_USR(avg_USR1: List[float], avg_USR2: List[float], avg_USR3: List[float], avg_USR4: List[float]):
         fov_range = list(range(30, 91, 5))
         plt.figure()
         plt.plot(fov_range, avg_USR1, marker='o', label='MARL', color='red')
         plt.plot(fov_range, avg_USR2, marker='s', label='MCRAIC', color='blue')
         plt.plot(fov_range, avg_USR3, marker='s', label='GREEDY', color='green')
+        plt.plot(fov_range, avg_USR4, marker='s', label='RANDOM', color='black')
         plt.title('FoV vs. USR')
         plt.xlabel('Field of View (degrees)')
         plt.ylabel('User Satisfaction Rate')
@@ -472,13 +476,14 @@ class Plot():
         plt.savefig('diagram/fov_vs_usr.png', dpi=300, bbox_inches='tight')
         #plt.show()
 
-    def plot_nue_vs_STP(avg_STP1: List[float], avg_STP2: List[float], avg_STP3: List[float]):
+    def plot_nue_vs_STP(avg_STP1: List[float], avg_STP2: List[float], avg_STP3: List[float], avg_STP4: List[float]):
         nue_range = list(range(1, 25, 1))
         # Plotting
         plt.figure()
         plt.plot(nue_range, avg_STP1, marker='o', label='MARL', color='red')
         plt.plot(nue_range, avg_STP2, marker='s', label='MCRAIC', color='blue')
         plt.plot(nue_range, avg_STP3, marker='s', label='GREEDY', color='green')
+        plt.plot(nue_range, avg_STP4, marker='s', label='RANDOM', color='black')
         plt.title('N_UE vs. System Throughput')
         plt.xlabel('Number of UEs')
         plt.ylabel('System Throughput (Mbps)')
@@ -490,13 +495,14 @@ class Plot():
         plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
         #plt.show()
     
-    def plot_nue_vs_AUS(avg_AUS1: List[float], avg_AUS2: List[float], avg_AUS3: List[float]):
+    def plot_nue_vs_AUS(avg_AUS1: List[float], avg_AUS2: List[float], avg_AUS3: List[float], avg_AUS4: List[float]):
         nue_range = list(range(1, 25, 1))
         # Plotting
         plt.figure()
         plt.plot(nue_range, avg_AUS1, marker='o', label='MARL', color='red')
         plt.plot(nue_range, avg_AUS2, marker='s', label='MCRAIC', color='blue')
         plt.plot(nue_range, avg_AUS3, marker='s', label='GREEDY', color='green')
+        plt.plot(nue_range, avg_AUS4, marker='s', label='RANDOM', color='black')
         plt.title('N_UE vs. AUS')
         plt.xlabel('Number of UEs')
         plt.ylabel('Average User Satisfaction')
@@ -509,13 +515,14 @@ class Plot():
         plt.savefig('diagram/nue_vs_aus.png', dpi=300, bbox_inches='tight')
         #plt.show()
 
-    def plot_nue_vs_SFI(avg_SFI1: List[float], avg_SFI2: List[float], avg_SFI3: List[float]):
+    def plot_nue_vs_SFI(avg_SFI1: List[float], avg_SFI2: List[float], avg_SFI3: List[float], avg_SFI4: List[float]):
         nue_range = list(range(1, 25, 1))
         # Plotting
         plt.figure()
         plt.plot(nue_range, avg_SFI1, marker='o', label='MARL', color='red')
         plt.plot(nue_range, avg_SFI2, marker='s', label='MCRAIC', color='blue')
         plt.plot(nue_range, avg_SFI3, marker='s', label='GREEDY', color='green')
+        plt.plot(nue_range, avg_SFI4, marker='s', label='RANDOM', color='black')
         plt.title('N_UE vs. SFI')
         plt.xlabel('Number of UEs')
         plt.ylabel('Service Fairness Index')
@@ -528,13 +535,14 @@ class Plot():
         plt.savefig('diagram/nue_vs_sfi.png', dpi=300, bbox_inches='tight')
         #plt.show()
 
-    def plot_nue_vs_USR(avg_USR1: List[float], avg_USR2: List[float], avg_USR3: List[float]):
+    def plot_nue_vs_USR(avg_USR1: List[float], avg_USR2: List[float], avg_USR3: List[float], avg_USR4: List[float]):
         nue_range = list(range(1, 25, 1))
         # Plotting
         plt.figure()
         plt.plot(nue_range, avg_USR1, marker='o', label='MARL', color='red')
         plt.plot(nue_range, avg_USR2, marker='s', label='MCRAIC', color='blue')
         plt.plot(nue_range, avg_USR3, marker='s', label='GREEDY', color='green')
+        plt.plot(nue_range, avg_USR4, marker='s', label='RANDOM', color='black')
         plt.title('N_UE vs. USR')
         plt.xlabel('Number of UEs')
         plt.ylabel('User Satisfaction Rate')
