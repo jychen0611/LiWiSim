@@ -4,29 +4,54 @@ from location import Location as l
 import random
 import numpy as np
 
-def GREEDY(N_ue, N_vlc, K, required_data_rate, vlc_data_rate):
+def GREEDY(N_ue, N_vlc, K, required_data_rate, vlc_data_rate, ue_locations, wifi_location,  ap_idx_list):
     # Set remain data rate requirement
     remained_data_rate = required_data_rate.copy()
+    wifi = []
     lifi = []
+    N_wifi_UE = 0
     for i in range(N_ue):
-        lifi.append(i)
+        # Random choice from a list (lifi: 0,2  wifi: 1)
+        rd = random.choice([0, 1])
+        if rd % 2 == 0:
+            lifi.append(i)
+        else:
+            N_wifi_UE += 1
+            wifi.append(i)
 
     STP = 0
     total_data_rate_of_each_ue = [0 for i in range(N_ue)]
     
-    # Generate UE priority with required data rate
+    # The remaining band of each VLC AP
+    C = [{0, 1, 2} for j in range(N_vlc)]
+
+
+    # Generate UE priority with (1/vlc_data_rate[0][i][ap_idx_list[i]])
     ue_priority = []
     for i in range(N_ue):
-        if required_data_rate[i] != 0:
-            priority = 1/required_data_rate[i]
+        if vlc_data_rate[0][i][ap_idx_list[i]] != 0:
+            priority = 1/vlc_data_rate[0][i][ap_idx_list[i]]
             ue_priority.append(priority)
         else:
             ue_priority.append(np.finfo(np.float32).max)
     # Sort VLC UE with UE priority
     lifi_sorted = sorted(lifi, key=lambda ue: ue_priority[ue])
 
-    # The remaining band of each VLC AP
-    C = [{0, 1, 2} for j in range(N_vlc)]
+    for ue in lifi_sorted:
+        best = ap_idx_list[ue]
+        if best == -1:
+            continue
+        while C[best]:
+            # assign an available band to UE-i;
+            band = C[best].pop()
+            total_data_rate_of_each_ue[ue] += vlc_data_rate[band][ue][best]
+            # Update STP
+            STP += vlc_data_rate[band][ue][best]
+            # Update the require data rate
+            remained_data_rate[ue] -= vlc_data_rate[band][ue][best]
+
+            if remained_data_rate[ue] <= 0:
+                    break
 
     for ue in lifi_sorted:
         for ap in K[ue]:
@@ -45,7 +70,21 @@ def GREEDY(N_ue, N_vlc, K, required_data_rate, vlc_data_rate):
             if remained_data_rate[ue] <= 0:
                 break
 
-     # Caculate average user satisfaction (AUS)
+    # wifi allocation #################################################################################
+    # Caculate the WiFi data rate of each UE
+    wifi_channel_gain = [f.wifi_channel_gain(d=l.geometric_distance(ue_locations[i], wifi_location)) for i in range(N_ue)]
+    # p.plot_wifi_channel_gain_vector(wifi_channel_gain)
+    wifi_snr = [f.wifi_snr(H_wifi=wifi_channel_gain[i], N_wifi_ue=N_wifi_UE) for i in range(N_ue)]
+    # p.plot_wifi_snr_vector(wifi_snr)
+    wifi_data_rate = [f.wifi_data_rate(snr=wifi_snr[i], N_wifi_ue=N_wifi_UE) for i in range(N_ue)]
+    #p.plot_wifi_data_rate_vector(wifi_data_rate)
+    
+    # Calculate data rate obtained from WiFi 
+    for ue in wifi:
+        total_data_rate_of_each_ue[ue] += wifi_data_rate[ue]
+        STP += wifi_data_rate[ue]
+
+    # Caculate average user satisfaction (AUS)
     AUS = 0
     for i in range(N_ue):
         if total_data_rate_of_each_ue[i]/required_data_rate[i] > 1:
@@ -187,8 +226,17 @@ def GREEDY_EXE(N_UE, FoV):
     
     vlc_data_rate = [vlc_data_rate_R, vlc_data_rate_G, vlc_data_rate_B]
 
+    # Caculate the most strong AP's index for each UE
+    ap_idx_list = []
+    for i in range(N_UE):
+        d = 100
+        ap_idx = -1
+        for j in K[i]:
+            if distance[i][j] < d:
+                d = distance[i][j]
+                ap_idx = j
+        ap_idx_list.append(ap_idx)
 
 
-
-    [STP, AUS, SFI, USR] = GREEDY(N_ue=N_UE, N_vlc=cfg.N_VLC, K=K, required_data_rate=require_data_rate, vlc_data_rate=vlc_data_rate)
+    [STP, AUS, SFI, USR] = GREEDY(N_ue=N_UE, N_vlc=cfg.N_VLC, K=K, required_data_rate=require_data_rate, vlc_data_rate=vlc_data_rate, ue_locations=ue_locations, wifi_location=wifi_location, ap_idx_list=ap_idx_list)
     return STP, AUS, SFI, USR

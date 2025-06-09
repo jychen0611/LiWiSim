@@ -12,7 +12,7 @@ def RANDOM(N_ue, N_vlc, K, required_data_rate, vlc_data_rate, ue_locations, wifi
     N_wifi_UE = 0
     for i in range(N_ue):
         # Random choice from a list (lifi: 0,2  wifi: 1)
-        rd = random.choice([0, 1, 2])
+        rd = random.choice([0, 1])
         if rd % 2 == 0:
             lifi.append(i)
         else:
