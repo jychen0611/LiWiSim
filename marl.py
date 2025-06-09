@@ -288,14 +288,12 @@ class HybridNetworkEnv:
                 # Update the require data rate
                 state[ue][0] -= vlc_data_rate[band][ue][best]
         
-        # Generate UE priority with (1/state[i][0])
+        # Generate UE priority with (state[i][0])
         ue_priority = []
         for i in range(self.n_ue):
-            if state[i][0] != 0:
-                priority = 1/state[i][0]
-                ue_priority.append(priority)
-            else:
-                ue_priority.append(np.finfo(np.float32).max)
+            priority = state[i][0]
+            ue_priority.append(priority)
+            
         # Sort VLC UE with UE priority
         lifi_sorted = sorted(lifi, key=lambda ue: ue_priority[ue])
 
