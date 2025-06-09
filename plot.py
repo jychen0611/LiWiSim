@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 from typing import List
+import os
 
 
 
@@ -644,3 +645,48 @@ class Plot():
         # Save figure to file
         # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
         plt.show()
+
+    def plot_execution_and_training_time(exec_times, train_times):
+        """
+        Plots two separate bar charts: one for execution time, one for training time, per N_UE.
+
+        Parameters:
+        - exec_times: List[float] – Execution time per N_UE.
+        - train_times: List[float] – Training time per N_UE.
+        """
+        if len(exec_times) != len(train_times):
+            raise ValueError(f"Length mismatch: exec_times({len(exec_times)}) != train_times({len(train_times)})")
+
+        n_ue_list = list(range(1, len(exec_times) + 1))
+        x = np.arange(len(n_ue_list))
+        width = 0.6
+
+        os.makedirs("diagram", exist_ok=True)
+
+        # Plot Execution Time
+        fig1, ax1 = plt.subplots()
+        ax1.bar(x, exec_times, width, color='skyblue')
+        ax1.set_xlabel('Number of UEs (N_UE)')
+        ax1.set_ylabel('Execution Time (s)')
+        ax1.set_title('Execution Time per N_UE')
+        ax1.set_xticks(x)
+        ax1.set_xticklabels(n_ue_list)
+        ax1.grid(axis='y', linestyle='--', alpha=0.7)
+
+        plt.tight_layout()
+        plt.savefig('diagram/execution_time.png', dpi=300, bbox_inches='tight')
+        plt.close()
+
+        # Plot Training Time
+        fig2, ax2 = plt.subplots()
+        ax2.bar(x, train_times, width, color='salmon')
+        ax2.set_xlabel('Number of UEs (N_UE)')
+        ax2.set_ylabel('Training Time (s)')
+        ax2.set_title('Training Time per N_UE')
+        ax2.set_xticks(x)
+        ax2.set_xticklabels(n_ue_list)
+        ax2.grid(axis='y', linestyle='--', alpha=0.7)
+
+        plt.tight_layout()
+        plt.savefig('diagram/training_time.png', dpi=300, bbox_inches='tight')
+        plt.close()
