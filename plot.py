@@ -478,7 +478,7 @@ class Plot():
         #plt.show()
 
     def plot_nue_vs_STP(avg_STP1: List[float], avg_STP2: List[float], avg_STP3: List[float], avg_STP4: List[float]):
-        nue_range = list(range(1, 25, 1))
+        nue_range = list(range(1, 26, 1))
         # Plotting
         plt.figure()
         plt.plot(nue_range, avg_STP1, marker='o', label='MARL', color='red')
@@ -497,7 +497,7 @@ class Plot():
         #plt.show()
     
     def plot_nue_vs_AUS(avg_AUS1: List[float], avg_AUS2: List[float], avg_AUS3: List[float], avg_AUS4: List[float]):
-        nue_range = list(range(1, 25, 1))
+        nue_range = list(range(1, 26, 1))
         # Plotting
         plt.figure()
         plt.plot(nue_range, avg_AUS1, marker='o', label='MARL', color='red')
@@ -517,7 +517,7 @@ class Plot():
         #plt.show()
 
     def plot_nue_vs_SFI(avg_SFI1: List[float], avg_SFI2: List[float], avg_SFI3: List[float], avg_SFI4: List[float]):
-        nue_range = list(range(1, 25, 1))
+        nue_range = list(range(1, 26, 1))
         # Plotting
         plt.figure()
         plt.plot(nue_range, avg_SFI1, marker='o', label='MARL', color='red')
@@ -537,7 +537,7 @@ class Plot():
         #plt.show()
 
     def plot_nue_vs_USR(avg_USR1: List[float], avg_USR2: List[float], avg_USR3: List[float], avg_USR4: List[float]):
-        nue_range = list(range(1, 25, 1))
+        nue_range = list(range(1, 26, 1))
         # Plotting
         plt.figure()
         plt.plot(nue_range, avg_USR1, marker='o', label='MARL', color='red')

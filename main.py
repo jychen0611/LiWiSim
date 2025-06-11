@@ -125,7 +125,7 @@ def N_UE_Experiments():
     MARL_N_UE_avg_USR = []
     MARL_N_UE_avg_TRAINING_TIME = []
     MARL_N_UE_avg_EXE_TIME = []
-    for i in range(1, 25, 1):  # N_UE from 1 to 25 with step size 1
+    for i in range(1, 26, 1):  # N_UE from 1 to 25 with step size 1
         print("N_UE: ", i)
         sum_rate = 0
         satisfaction = 0
@@ -157,7 +157,7 @@ def N_UE_Experiments():
     MCRAIC_N_UE_avg_AUS = []
     MCRAIC_N_UE_avg_SFI = []
     MCRAIC_N_UE_avg_USR = []
-    for i in range(1, 25, 1):  # N_UE from 1 to 25 with step size 1
+    for i in range(1, 26, 1):  # N_UE from 1 to 25 with step size 1
         sum_rate = 0
         satisfaction = 0
         fairness = 0
@@ -180,7 +180,7 @@ def N_UE_Experiments():
     GREEDY_N_UE_avg_AUS = []
     GREEDY_N_UE_avg_SFI = []
     GREEDY_N_UE_avg_USR = []
-    for i in range(1, 25, 1):  # N_UE from 1 to 25 with step size 1
+    for i in range(1, 26, 1):  # N_UE from 1 to 25 with step size 1
         sum_rate = 0
         satisfaction = 0
         fairness = 0
@@ -203,7 +203,7 @@ def N_UE_Experiments():
     RANDOM_N_UE_avg_AUS = []
     RANDOM_N_UE_avg_SFI = []
     RANDOM_N_UE_avg_USR = []
-    for i in range(1, 25, 1):  # N_UE from 1 to 25 with step size 1
+    for i in range(1, 26, 1):  # N_UE from 1 to 25 with step size 1
         sum_rate = 0
         satisfaction = 0
         fairness = 0
