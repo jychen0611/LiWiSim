@@ -371,6 +371,8 @@ class MultiUEAgent:
         self.epsilon = 1.0
         self.epsilon_decay = 0.995 # 0.995
         self.epsilon_min = 0.1
+        self.learn_step_counter = 0
+        self.target_update_freq = 100
 
     def select_actions(self, states):
         actions = []
@@ -406,6 +408,11 @@ class MultiUEAgent:
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+
+        # Update the target network
+        self.learn_step_counter += 1
+        if self.learn_step_counter % self.target_update_freq == 0:
+            self.target_net.load_state_dict(self.policy_net.state_dict())
 
 def MARL_EXE(N_UE, FoV):
     # Construct environment and agents
