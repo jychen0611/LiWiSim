@@ -380,7 +380,7 @@ class MultiUEAgent:
         self.epsilon_decay = 0.995 # 0.995
         self.epsilon_min = 0.1
         self.learn_step_counter = 0
-        self.target_update_freq = 100
+        self.target_update_freq = 800
 
     def select_actions(self, states):
         actions = []
@@ -488,11 +488,42 @@ def MARL_EXE(N_UE, FoV):
             if i == 0:
                 N_wifi_UE += 1
         
+        # Adjust the threshold by current FoV
+        if FoV <= 35:
+            threshold = N_UE/2
+        elif FoV <= 45:
+            threshold = N_UE/3
+        else:
+            threshold = 5 
+        
+        if threshold < 5:
+            threshold = 5
+            
+        # If the number of UE connected to wifi smaller than threshold, let outage UE use wifi
+        if N_wifi_UE < threshold:
+            ue_idx = [i for i in range(N_UE)]
+            # Generate UE priority with wifi_diatance
+            ue_priority = []
+            for i in range(N_UE):
+                priority = wifi_distance[i]
+                ue_priority.append(priority)
+            
+            # Sort VLC UE with UE priority
+            ue_sorted = sorted(ue_idx, key=lambda ue: ue_priority[ue])
+
+            for i in ue_sorted:
+                if len(K[i]) == 0:
+                    actions[i] = 0
+                    N_wifi_UE += 1
+                
+                if N_wifi_UE >= threshold:
+                    break
+        
         # If no UEs choose WiFi, force the UE closest to the WiFi AP to associate with it
-        if N_wifi_UE == 0:
-            wifi_ue = np.argmin(wifi_distance)
-            actions[wifi_ue] = 0
-            N_wifi_UE = 1
+        #if N_wifi_UE == 0 and FoV >= :
+        #    wifi_ue = np.argmin(wifi_distance)
+        #    actions[wifi_ue] = 0
+        #    N_wifi_UE += 1
         
         # Calculate wifi data rate
         wifi_data_rate = env.calculate_wifi_data_rate(N_wifi_UE, ue_locations, wifi_location)
