@@ -7,6 +7,9 @@ import marl as rl
 import greedy as gr
 import rand as rd
 import time
+import csv
+import json
+import os
 
 def FoV_Experiments():
     ########################################################################
@@ -128,6 +131,54 @@ def FoV_Experiments():
     p.plot_fov_vs_SFI(MARL_FoV_avg_SFI, MCRAIC_FoV_avg_SFI, GREEDY_FoV_avg_SFI, RANDOM_FoV_avg_SFI)
     p.plot_fov_vs_USR(MARL_FoV_avg_USR, MCRAIC_FoV_avg_USR, GREEDY_FoV_avg_USR, RANDOM_FoV_avg_USR)
     p.plot_fov_vs_OTR(MARL_FoV_avg_OTR, MCRAIC_FoV_avg_OTR, GREEDY_FoV_avg_OTR, RANDOM_FoV_avg_OTR)
+
+    # Store results
+    # Ensure output folder exists
+    os.makedirs("data", exist_ok=True)
+
+    # FoV from 30 to 90 with step of 5
+    FoV_values = list(range(30, 91, 5))  # [30, 35, 40, ..., 90]
+
+    # Make sure your metric lists are already defined and of same length as FoV_values
+    # Example placeholder: MARL_FoV_avg_STP = [0.8, 0.82, ...] (length should be 13)
+
+    # Header
+    fov_header = [
+        'FoV',
+        'MARL_STP', 'MCRAIC_STP', 'GREEDY_STP', 'RANDOM_STP',
+        'MARL_AUS', 'MCRAIC_AUS', 'GREEDY_AUS', 'RANDOM_AUS',
+        'MARL_SFI', 'MCRAIC_SFI', 'GREEDY_SFI', 'RANDOM_SFI',
+        'MARL_USR', 'MCRAIC_USR', 'GREEDY_USR', 'RANDOM_USR',
+        'MARL_OTR', 'MCRAIC_OTR', 'GREEDY_OTR', 'RANDOM_OTR',
+    ]
+
+    # Construct rows
+    fov_rows = []
+    for i in range(len(FoV_values)):
+        row = [
+            FoV_values[i],
+            MARL_FoV_avg_STP[i], MCRAIC_FoV_avg_STP[i], GREEDY_FoV_avg_STP[i], RANDOM_FoV_avg_STP[i],
+            MARL_FoV_avg_AUS[i], MCRAIC_FoV_avg_AUS[i], GREEDY_FoV_avg_AUS[i], RANDOM_FoV_avg_AUS[i],
+            MARL_FoV_avg_SFI[i], MCRAIC_FoV_avg_SFI[i], GREEDY_FoV_avg_SFI[i], RANDOM_FoV_avg_SFI[i],
+            MARL_FoV_avg_USR[i], MCRAIC_FoV_avg_USR[i], GREEDY_FoV_avg_USR[i], RANDOM_FoV_avg_USR[i],
+            MARL_FoV_avg_OTR[i], MCRAIC_FoV_avg_OTR[i], GREEDY_FoV_avg_OTR[i], RANDOM_FoV_avg_OTR[i],
+        ]
+        fov_rows.append(row)
+
+    # Write CSV
+    with open('data/fov_metrics.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(fov_header)
+        writer.writerows(fov_rows)
+
+    # Write JSON
+    fov_json_data = []
+    for row in fov_rows:
+        entry = dict(zip(fov_header, row))
+        fov_json_data.append(entry)
+
+    with open('data/fov_metrics.json', 'w') as f:
+        json.dump(fov_json_data, f, indent=4)
 
 def N_UE_Experiments():
     ########################################################################
@@ -267,6 +318,49 @@ def N_UE_Experiments():
     p.plot_nue_vs_OTR(MARL_N_UE_avg_OTR, MCRAIC_N_UE_avg_OTR, GREEDY_N_UE_avg_OTR, RANDOM_N_UE_avg_OTR)
     p.plot_execution_and_training_time(MARL_N_UE_avg_EXE_TIME, MARL_N_UE_avg_TRAINING_TIME)
     p.plot_execution_time_compare(MARL_N_UE_avg_EXE_TIME, MCRAIC_N_UE_avg_EXE_TIME)
+
+    # Store result
+    # Ensure output folder exists
+    os.makedirs("data", exist_ok=True)
+
+    # Generate N_UE list based on length of any metric
+    N_UE = list(range(1, len(MARL_N_UE_avg_STP) + 1))
+
+    # Prepare header
+    header = [
+        'N_UE',
+        'MARL_STP', 'MCRAIC_STP', 'GREEDY_STP', 'RANDOM_STP',
+        'MARL_AUS', 'MCRAIC_AUS', 'GREEDY_AUS', 'RANDOM_AUS',
+        'MARL_SFI', 'MCRAIC_SFI', 'GREEDY_SFI', 'RANDOM_SFI',
+        'MARL_USR', 'MCRAIC_USR', 'GREEDY_USR', 'RANDOM_USR',
+        'MARL_OTR', 'MCRAIC_OTR', 'GREEDY_OTR', 'RANDOM_OTR',
+    ]
+
+    # Construct rows
+    rows = []
+    for i in range(len(N_UE)):
+        row = [
+            N_UE[i],
+            MARL_N_UE_avg_STP[i], MCRAIC_N_UE_avg_STP[i], GREEDY_N_UE_avg_STP[i], RANDOM_N_UE_avg_STP[i],
+            MARL_N_UE_avg_AUS[i], MCRAIC_N_UE_avg_AUS[i], GREEDY_N_UE_avg_AUS[i], RANDOM_N_UE_avg_AUS[i],
+            MARL_N_UE_avg_SFI[i], MCRAIC_N_UE_avg_SFI[i], GREEDY_N_UE_avg_SFI[i], RANDOM_N_UE_avg_SFI[i],
+            MARL_N_UE_avg_USR[i], MCRAIC_N_UE_avg_USR[i], GREEDY_N_UE_avg_USR[i], RANDOM_N_UE_avg_USR[i],
+            MARL_N_UE_avg_OTR[i], MCRAIC_N_UE_avg_OTR[i], GREEDY_N_UE_avg_OTR[i], RANDOM_N_UE_avg_OTR[i],
+        ]
+        rows.append(row)
+
+    with open('data/nue_metrics.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(rows)
+
+    json_data = []
+    for row in rows:
+        entry = dict(zip(header, row))
+        json_data.append(entry)
+
+    with open('data/nue_metrics.json', 'w') as f:
+        json.dump(json_data, f, indent=4)
 
 if __name__ == "__main__":
     print("Simulation Start!")
