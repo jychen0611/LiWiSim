@@ -113,7 +113,15 @@ def GREEDY(N_ue, N_vlc, K, required_data_rate, vlc_data_rate, ue_locations, wifi
             satisfied_ue += 1
     USR = satisfied_ue / N_ue
 
-    return STP, AUS, SFI, USR
+    # Calculate Outage Ratio (OTR)
+    OTR = 0
+    outage_ue = 0
+    for i in range(N_ue):
+        if total_data_rate_of_each_ue[i] == 0:
+            outage_ue += 1
+    OTR = outage_ue / N_ue
+
+    return STP, AUS, SFI, USR, OTR
 
 def GREEDY_EXE(N_UE, FoV):
     # Uniformly generate the location of each VLC AP/UE
@@ -238,5 +246,5 @@ def GREEDY_EXE(N_UE, FoV):
         ap_idx_list.append(ap_idx)
 
 
-    [STP, AUS, SFI, USR] = GREEDY(N_ue=N_UE, N_vlc=cfg.N_VLC, K=K, required_data_rate=require_data_rate, vlc_data_rate=vlc_data_rate, ue_locations=ue_locations, wifi_location=wifi_location, ap_idx_list=ap_idx_list)
-    return STP, AUS, SFI, USR
+    [STP, AUS, SFI, USR, OTR] = GREEDY(N_ue=N_UE, N_vlc=cfg.N_VLC, K=K, required_data_rate=require_data_rate, vlc_data_rate=vlc_data_rate, ue_locations=ue_locations, wifi_location=wifi_location, ap_idx_list=ap_idx_list)
+    return STP, AUS, SFI, USR, OTR

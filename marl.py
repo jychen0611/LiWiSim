@@ -355,7 +355,15 @@ class HybridNetworkEnv:
                 satisfied_ue += 1
         USR = satisfied_ue / self.n_ue
 
-        return next_state, reward, STP, AUS, SFI, USR
+        # Calculate Outage Ratio (OTR)
+        OTR = 0
+        outage_ue = 0
+        for i in range(self.n_ue):
+            if total_data_rate_of_each_ue[i] == 0:
+                outage_ue += 1
+        OTR = outage_ue / self.n_ue
+
+        return next_state, reward, STP, AUS, SFI, USR, OTR
 
 # MARL Agent
 class MultiUEAgent:
@@ -429,6 +437,7 @@ def MARL_EXE(N_UE, FoV):
     AUS_list = []
     SFI_list = []
     USR_list = []
+    OTR_list = []
 
     # Training Loop
     for episode in range(cfg.EPISODE):
@@ -489,7 +498,7 @@ def MARL_EXE(N_UE, FoV):
         wifi_data_rate = env.calculate_wifi_data_rate(N_wifi_UE, ue_locations, wifi_location)
 
         # Resource allocation
-        next_state, reward, STP, AUS, SFI, USR = env.resource_allocator(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
+        next_state, reward, STP, AUS, SFI, USR, OTR = env.resource_allocator(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
         
         # Push experiences into replay buffer
         for i in range(N_UE):
@@ -505,6 +514,7 @@ def MARL_EXE(N_UE, FoV):
         AUS_list.append(AUS)
         SFI_list.append(SFI)
         USR_list.append(USR)
+        OTR_list.append(OTR)
 
     # Plot episode related diagrams
     if cfg.PLOT_EPISODE_RELATED_DIAGRAM:
@@ -520,9 +530,11 @@ def MARL_EXE(N_UE, FoV):
     AUS_last_100 = AUS_list[-100:]
     SFI_last_100 = SFI_list[-100:]
     USR_last_100 = USR_list[-100:]
+    OTR_last_100 = OTR_list[-100:]
     STP = sum(STP_last_100) / 100
     AUS = sum(AUS_last_100) / 100
     SFI = sum(SFI_last_100) / 100
     USR = sum(USR_last_100) / 100
-    return STP, AUS, SFI, USR
+    OTR = sum(OTR_last_100) / 100
+    return STP, AUS, SFI, USR, OTR
 

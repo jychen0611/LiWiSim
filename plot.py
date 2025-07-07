@@ -477,6 +477,23 @@ class Plot():
         plt.legend()
         plt.savefig('diagram/fov_vs_usr.png', dpi=300, bbox_inches='tight')
         #plt.show()
+    
+    def plot_fov_vs_OTR(avg_OTR1: List[float], avg_OTR2: List[float], avg_OTR3: List[float], avg_OTR4: List[float]):
+        fov_range = list(range(30, 91, 5))
+        plt.figure()
+        plt.plot(fov_range, avg_OTR1, marker='o', label='MARL', color='red')
+        plt.plot(fov_range, avg_OTR2, marker='s', label='MCRAIC', color='blue')
+        plt.plot(fov_range, avg_OTR3, marker='s', label='GREEDY', color='green')
+        plt.plot(fov_range, avg_OTR4, marker='s', label='RANDOM', color='black')
+        plt.title('FoV vs. OTR')
+        plt.xlabel('Field of View (degrees)')
+        plt.ylabel('Outage Ratio')
+        # plt.ylim(0.2, 1)
+        plt.ylim(bottom=0)  
+        plt.grid(True)
+        plt.legend()
+        plt.savefig('diagram/fov_vs_otr.png', dpi=300, bbox_inches='tight')
+        #plt.show()
 
     def plot_nue_vs_STP(avg_STP1: List[float], avg_STP2: List[float], avg_STP3: List[float], avg_STP4: List[float]):
         nue_range = list(range(1, 26, 1))
@@ -555,6 +572,26 @@ class Plot():
         plt.legend()
         # Save figure to file
         plt.savefig('diagram/nue_vs_usr.png', dpi=300, bbox_inches='tight')
+        #plt.show()
+
+    def plot_nue_vs_OTR(avg_OTR1: List[float], avg_OTR2: List[float], avg_OTR3: List[float], avg_OTR4: List[float]):
+        nue_range = list(range(1, 26, 1))
+        # Plotting
+        plt.figure()
+        plt.plot(nue_range, avg_OTR1, marker='o', label='MARL', color='red')
+        plt.plot(nue_range, avg_OTR2, marker='s', label='MCRAIC', color='blue')
+        plt.plot(nue_range, avg_OTR3, marker='s', label='GREEDY', color='green')
+        plt.plot(nue_range, avg_OTR4, marker='s', label='RANDOM', color='black')
+        plt.title('N_UE vs. OTR')
+        plt.xlabel('Number of UEs')
+        plt.ylabel('Outage Ratio')
+        # Set y-axis limits (adjust the values as needed)
+        # plt.ylim(0.6, 1)  
+        plt.ylim(bottom=0)  
+        plt.grid(True)
+        plt.legend()
+        # Save figure to file
+        plt.savefig('diagram/nue_vs_otr.png', dpi=300, bbox_inches='tight')
         #plt.show()
 
     def plot_episode_vs_STP(avg_STP:List[float]):

@@ -429,6 +429,14 @@ def MCRAIC_EXE(N_UE, FoV):
             satisfied_ue += 1
     USR = satisfied_ue / N_UE
 
+    # Calculate Outage Ratio (OTR)
+    OTR = 0
+    outage_ue = 0
+    for i in range(N_UE):
+        if total_data_rate_of_each_ue[i] == 0:
+            outage_ue += 1
+    OTR = outage_ue / N_UE
+
     # p.plot_total_data_rate(total_data_rate_of_each_ue=total_data_rate_of_each_ue, require_data_rate=require_data_rate)
     # print("System Throughput: ", STP)
-    return STP, AUS, SFI, USR
+    return STP, AUS, SFI, USR, OTR
