@@ -179,14 +179,19 @@ def N_UE_Experiments():
     MCRAIC_N_UE_avg_SFI = []
     MCRAIC_N_UE_avg_USR = []
     MCRAIC_N_UE_avg_OTR = []
+    MCRAIC_N_UE_avg_EXE_TIME = []
     for i in range(1, 26, 1):  # N_UE from 1 to 25 with step size 1
         sum_rate = 0
         satisfaction = 0
         fairness = 0
         satisfaction_rate = 0
         outage_ratio = 0
+        execution_time = 0
         for j in range(cfg.TIMES):
+            start = time.perf_counter()
             [STP, AUS, SFI, USR, OTR] = mc.MCRAIC_EXE(N_UE=i, FoV=cfg.F_O_V)
+            end = time.perf_counter()
+            execution_time += (end-start)
             sum_rate += STP
             satisfaction += AUS
             fairness += SFI
@@ -197,6 +202,7 @@ def N_UE_Experiments():
         MCRAIC_N_UE_avg_SFI.append(fairness/cfg.TIMES)
         MCRAIC_N_UE_avg_USR.append(satisfaction_rate/cfg.TIMES)
         MCRAIC_N_UE_avg_OTR.append(outage_ratio/cfg.TIMES)
+        MCRAIC_N_UE_avg_EXE_TIME.append(execution_time/cfg.TIMES)
     #################################################################################
 
     # GREEDY ########################################################################
@@ -260,6 +266,7 @@ def N_UE_Experiments():
     p.plot_nue_vs_USR(MARL_N_UE_avg_USR, MCRAIC_N_UE_avg_USR, GREEDY_N_UE_avg_USR, RANDOM_N_UE_avg_USR)
     p.plot_nue_vs_OTR(MARL_N_UE_avg_OTR, MCRAIC_N_UE_avg_OTR, GREEDY_N_UE_avg_OTR, RANDOM_N_UE_avg_OTR)
     p.plot_execution_and_training_time(MARL_N_UE_avg_EXE_TIME, MARL_N_UE_avg_TRAINING_TIME)
+    p.plot_execution_time_compare(MARL_N_UE_avg_EXE_TIME, MCRAIC_N_UE_avg_EXE_TIME)
 
 if __name__ == "__main__":
     print("Simulation Start!")

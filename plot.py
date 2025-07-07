@@ -689,11 +689,15 @@ class Plot():
         Plots two separate bar charts: one for execution time, one for training time, per N_UE.
 
         Parameters:
-        - exec_times: List[float] – Execution time per N_UE.
-        - train_times: List[float] – Training time per N_UE.
+        - exec_times: List[float] – Execution time per N_UE (in seconds).
+        - train_times: List[float] – Training time per N_UE (in seconds).
         """
         if len(exec_times) != len(train_times):
             raise ValueError(f"Length mismatch: exec_times({len(exec_times)}) != train_times({len(train_times)})")
+
+        # Convert to milliseconds
+        exec_times_ms = [t * 1000 for t in exec_times]
+        #train_times_ms = [t * 1000 for t in train_times]
 
         n_ue_list = list(range(1, len(exec_times) + 1))
         x = np.arange(len(n_ue_list))
@@ -703,9 +707,9 @@ class Plot():
 
         # Plot Execution Time
         fig1, ax1 = plt.subplots()
-        ax1.bar(x, exec_times, width, color='skyblue')
+        ax1.bar(x, exec_times_ms, width, color='skyblue')
         ax1.set_xlabel('Number of UEs (N_UE)')
-        ax1.set_ylabel('Execution Time (s)')
+        ax1.set_ylabel('Execution Time (ms)')
         ax1.set_title('Execution Time per N_UE')
         ax1.set_xticks(x)
         ax1.set_xticklabels(n_ue_list)
@@ -728,3 +732,37 @@ class Plot():
         plt.tight_layout()
         plt.savefig('diagram/training_time.png', dpi=300, bbox_inches='tight')
         plt.close()
+
+    def plot_execution_time_compare(marl_times, mcraic_times):
+        """
+        Draws a bar chart comparing execution times of MARL and MCRAIC algorithms
+        across different N_UE values (1 to 25), with time shown in milliseconds.
+
+        Parameters:
+        - marl_times (list of float): Execution times for MARL (in seconds).
+        - mcraic_times (list of float): Execution times for MCRAIC (in seconds).
+        """
+
+        assert len(marl_times) == len(mcraic_times) == 25, "Each list must have 25 elements (N_UE from 1 to 25)."
+
+        # Convert to milliseconds
+        marl_times_ms = [t * 1000 for t in marl_times]
+        mcraic_times_ms = [t * 1000 for t in mcraic_times]
+
+        n_ue = np.arange(1, 26)
+        bar_width = 0.35
+        index = np.arange(len(n_ue))
+
+        plt.figure(figsize=(14, 6))
+        plt.bar(index, marl_times_ms, width=bar_width, label='MARL')
+        plt.bar(index + bar_width, mcraic_times_ms, width=bar_width, label='MCRAIC')
+
+        plt.xlabel('N_UE')
+        plt.ylabel('Execution Time (ms)')
+        plt.title('Execution Time: MARL vs MCRAIC')
+        plt.xticks(index + bar_width / 2, n_ue)
+        plt.legend()
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        plt.savefig('diagram/exe_time_cmp.png', dpi=300, bbox_inches='tight')
+        # plt.show()
