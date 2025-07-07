@@ -53,6 +53,7 @@ class Plot():
         ax.set_zlabel('Z (m)')
         ax.set_title('WiFi / LiFi / UE Distribution Diagram with VLC Ground Coverage and Labels')
         ax.legend()
+        plt.savefig('diagram/network.png', dpi=300, bbox_inches='tight')
         plt.show()
 
     def plot_network_distribution(ue_locations, vlc_locations, wifi_location, fov_deg=cfg.F_O_V, ceiling_height=3.0):
@@ -469,7 +470,7 @@ class Plot():
         plt.plot(fov_range, avg_USR4, marker='s', label='RANDOM', color='black')
         plt.title('FoV vs. USR')
         plt.xlabel('Field of View (degrees)')
-        plt.ylabel('User Satisfaction Rate')
+        plt.ylabel('User Satisfaction Ratio')
         # plt.ylim(0.2, 1)
         plt.ylim(bottom=0)  
         plt.grid(True)
@@ -546,7 +547,7 @@ class Plot():
         plt.plot(nue_range, avg_USR4, marker='s', label='RANDOM', color='black')
         plt.title('N_UE vs. USR')
         plt.xlabel('Number of UEs')
-        plt.ylabel('User Satisfaction Rate')
+        plt.ylabel('User Satisfaction Ratio')
         # Set y-axis limits (adjust the values as needed)
         # plt.ylim(0.6, 1)  
         plt.ylim(bottom=0)  
@@ -568,7 +569,7 @@ class Plot():
         # Set y-axis limits (adjust the values as needed)
         # plt.ylim(bottom=0)  
         # Save figure to file
-        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.savefig('diagram/episode_vs_STP.png', dpi=300, bbox_inches='tight')
         plt.show()
 
     def plot_episode_vs_AUS(avg_AUS:List[float]):
@@ -583,7 +584,7 @@ class Plot():
         # Set y-axis limits (adjust the values as needed)
         # plt.ylim(bottom=0)  
         # Save figure to file
-        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.savefig('diagram/episode_vs_AUS.png', dpi=300, bbox_inches='tight')
         plt.show()
 
     def plot_episode_vs_SFI(avg_SFI:List[float]):
@@ -598,7 +599,7 @@ class Plot():
         # Set y-axis limits (adjust the values as needed)
         # plt.ylim(bottom=0)  
         # Save figure to file
-        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.savefig('diagram/episode_vs_SFI.png', dpi=300, bbox_inches='tight')
         plt.show()
         
     def plot_episode_vs_USR(avg_USR:List[float]):
@@ -608,12 +609,12 @@ class Plot():
         plt.plot(episode_range, avg_USR, marker='o')
         plt.title('Episode vs. USR')
         plt.xlabel('EPISODE')
-        plt.ylabel('User Satisfaction Rate')
+        plt.ylabel('User Satisfaction Ratio')
         plt.grid(True)
         # Set y-axis limits (adjust the values as needed)
         # plt.ylim(bottom=0)  
         # Save figure to file
-        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.savefig('diagram/episode_vs_USR.png', dpi=300, bbox_inches='tight')
         plt.show()
 
     def plot_episode_vs_reward(reward:List[float]):
@@ -628,7 +629,7 @@ class Plot():
         # Set y-axis limits (adjust the values as needed)
         # plt.ylim(bottom=0)  
         # Save figure to file
-        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.savefig('diagram/episode_vs_reward.png', dpi=300, bbox_inches='tight')
         plt.show()
 
     def plot_episode_vs_N_wifi_UE(N_wifi_UE:List[float], len):
@@ -643,7 +644,7 @@ class Plot():
         # Set y-axis limits (adjust the values as needed)
         # plt.ylim(bottom=0)  
         # Save figure to file
-        # plt.savefig('diagram/nue_vs_stp.png', dpi=300, bbox_inches='tight')
+        plt.savefig('diagram/episode_vs_N_wifi_UE.png', dpi=300, bbox_inches='tight')
         plt.show()
 
     def plot_execution_and_training_time(exec_times, train_times):
