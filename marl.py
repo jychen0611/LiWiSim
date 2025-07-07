@@ -418,9 +418,9 @@ class MultiUEAgent:
             self.epsilon *= self.epsilon_decay
 
         # Update the target network
-        self.learn_step_counter += 1
-        if self.learn_step_counter % self.target_update_freq == 0:
-            self.target_net.load_state_dict(self.policy_net.state_dict())
+        #self.learn_step_counter += 1
+        #if self.learn_step_counter % self.target_update_freq == 0:
+        #    self.target_net.load_state_dict(self.policy_net.state_dict())
 
 def MARL_EXE(N_UE, FoV):
     # Construct environment and agents
@@ -533,7 +533,8 @@ def MARL_EXE(N_UE, FoV):
         
         # Push experiences into replay buffer
         for i in range(N_UE):
-            agent.buffers[i].push(state[i], actions[i], reward, next_state[i])
+            for j in range((int)(25/N_UE)):
+                agent.buffers[i].push(state[i], actions[i], reward, next_state[i])
         agent.learn()
         
         if episode % 100 == 0:
