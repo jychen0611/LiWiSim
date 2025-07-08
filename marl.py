@@ -179,7 +179,7 @@ class HybridNetworkEnv:
         #p.plot_wifi_data_rate_vector(wifi_data_rate)
         return wifi_data_rate
     
-    def resource_allocator(self, actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate):
+    def resource_allocator(self, actions, state, vlc_data_rate, ap_idx_list, K, H, require_data_rate, ue_locations, wifi_location):
         # record reward 
         reward = 0
         wifi = []
@@ -310,7 +310,14 @@ class HybridNetworkEnv:
                     # reward += vlc_data_rate[band][ue][ap]
                     # Update the require data rate
                     # state[ue][0] -= vlc_data_rate[band][ue][ap]
-                    
+
+        # For high inteference UE, connected to wifi
+        for i in range(self.n_ue):
+            if total_data_rate_of_each_ue[i] == 0:
+                wifi.append(i)
+
+        # Calculate wifi data rate
+        wifi_data_rate = self.calculate_wifi_data_rate(len(wifi), ue_locations, wifi_location)
 
         # wifi allocation #################################################################################
         total_wifi_data_rate = 0  
@@ -363,7 +370,7 @@ class HybridNetworkEnv:
                 outage_ue += 1
         OTR = outage_ue / self.n_ue
 
-        return next_state, reward, STP, AUS, SFI, USR, OTR
+        return next_state, reward, STP, AUS, SFI, USR, OTR, len(wifi)
 
 # MARL Agent
 class MultiUEAgent:
@@ -526,10 +533,10 @@ def MARL_EXE(N_UE, FoV):
         #    N_wifi_UE += 1
         
         # Calculate wifi data rate
-        wifi_data_rate = env.calculate_wifi_data_rate(N_wifi_UE, ue_locations, wifi_location)
+        # wifi_data_rate = env.calculate_wifi_data_rate(N_wifi_UE, ue_locations, wifi_location)
 
         # Resource allocation
-        next_state, reward, STP, AUS, SFI, USR, OTR = env.resource_allocator(actions, state, vlc_data_rate, ap_idx_list, wifi_data_rate, K, H, require_data_rate)
+        next_state, reward, STP, AUS, SFI, USR, OTR, N_wifi_UE = env.resource_allocator(actions, state, vlc_data_rate, ap_idx_list, K, H, require_data_rate, ue_locations, wifi_location)
         
         # Push experiences into replay buffer
         for i in range(N_UE):
