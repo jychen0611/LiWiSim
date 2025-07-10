@@ -312,7 +312,7 @@ class HybridNetworkEnv:
                     # state[ue][0] -= vlc_data_rate[band][ue][ap]
 
         # For high inteference UE, connected to wifi
-        for i in range(self.n_ue):
+        for i in lifi:
             if total_data_rate_of_each_ue[i] == 0:
                 wifi.append(i)
 
